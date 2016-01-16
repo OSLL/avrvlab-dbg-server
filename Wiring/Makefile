@@ -14,17 +14,17 @@ MCU = atmega128
 # (Note: 3 is not always the best optimization level. See avr-libc FAQ.)
 OPT=0
 
-# create a variable that only pertains to this project
-MY_OWN_LIBRARY_DIR = /home/constantin/Test
+# Variable that only pertains to this project
+OWN_LIBRARY_DIR =
 
 # "EXTRAINCDIRS" is a variable used by the base makefile. The base makefile creates a -I compiler flag for every item in the "EXTRAINCDIRS" list.
 EXTRAINCDIRS = $(MY_OWN_LIBRARY_DIR)
 
 # *.c source files pertaining to project
-SRC =
+SRC = $(wildcard *.c)
 
 # *.cpp source files pertaining to project
-PSRC = Test.cpp
+PSRC = $(wildcard *.cpp)
 
 # specify additional (non-core) Arduino libraries to include
 ARDLIBS =
