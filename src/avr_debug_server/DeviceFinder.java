@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 public class DeviceFinder{
-	File file = new File("/dev/");
-	Pattern pattern = Pattern.compile("ttyUSB\\d+");
+	private static final File file = new File("/dev/");
+	private static final Pattern pattern = Pattern.compile("ttyUSB\\d+");
 	
-	String[] printList(){
+	public static String[] printList(){
 		ArrayList<String> result = new ArrayList<>();
 		String list[] = file.list();
 		for(String s : list)
@@ -18,7 +18,7 @@ public class DeviceFinder{
 		return res;
 	}
 	
-	private boolean matched(String s){
+	private static boolean matched(String s){
 		return pattern.matcher(s).matches();
 	}	
 	

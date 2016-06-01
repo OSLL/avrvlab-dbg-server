@@ -1,7 +1,5 @@
 package avr_debug_server;
 
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -15,61 +13,19 @@ class ConnectionHandler{
 	Avarice avarice;
 	boolean waiting = true;
 	private MainFrame frame;
-	Socket s;
-	public ConnectionHandler(MainFrame frame) {
+	private Socket s;
+	private int port;
+	public ConnectionHandler(MainFrame frame, int port) {
 		this.frame = frame;
-		frame.addWindowListener(new WindowListener() {
-			
-			@Override
-			public void windowOpened(WindowEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-			@Override
-			public void windowIconified(WindowEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-			@Override
-			public void windowDeiconified(WindowEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-			@Override
-			public void windowDeactivated(WindowEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-			@Override
-			public void windowClosing(WindowEvent e) {
-				avarice.stop();				
-			}
-			
-			@Override
-			public void windowClosed(WindowEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-			@Override
-			public void windowActivated(WindowEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-		});
+		this.port = port;
 	}
 	
 	ServerSocket server;
 	public void handle(){
-		System.out.println("Hi!");
 		avarice = new Avarice("avarice", this);
 		ServerSocket server = null;
 		try {
-			server = new ServerSocket(3129);
+			server = new ServerSocket(port);
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
@@ -77,6 +33,8 @@ class ConnectionHandler{
 		while(true)
 		{
 			try {
+				if(!avarice.isReadyForStart())
+					continue;
 				s = server.accept();
 				waiting = true;
 				frame.clientConnected();
@@ -90,14 +48,14 @@ class ConnectionHandler{
 						break;
 					System.out.println(new String(byteCommand,"UTF-8"));
 					DebugServerCommand command = new DebugServerCommand(byteCommand);
-					System.out.println("recieced: " + command.getCommand() + " " + command.getParameter());
+					System.out.println("recieved: " + command.getCommand() + " " + command.getParameter());
 					switch (command.getCommand()) {
 					case "LOAD":
 							loadFile(dis, "file.hex");
 							break;
 					case "STRT":
-							if(!avarice.isReadyForStart())
-								avarice.stop();
+							//if(!avarice.isReadyForStart())
+								//avarice.stop();
 							avarice.setFilePath("file.hex");
 							avarice.setProgrammerPath(frame.getProgrammerPath());
 							avarice.setTarget(frame.getTargetName());
@@ -109,12 +67,9 @@ class ConnectionHandler{
 				}
 				while(waiting);
 				frame.clientDisconnected();
-				//s.close();
-
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			System.out.println("%");
 		}
 	}
 	
@@ -129,7 +84,6 @@ class ConnectionHandler{
 		} catch (IOException e) {
 			return;
 		}
-		
 	}
 	
 	public void startOk(){
@@ -143,7 +97,6 @@ class ConnectionHandler{
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
 		waiting = false;
 	}
 	
@@ -158,14 +111,15 @@ class ConnectionHandler{
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	
 		waiting = false;
 	}
 	
 	@Override
 	protected void finalize() throws Throwable {
-		server.close();
-		avarice.stop();
+		if(server!=null)
+			server.close();
+		if(avarice!=null)
+			avarice.stop();
 		super.finalize();
 	}
 }

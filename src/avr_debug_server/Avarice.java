@@ -1,35 +1,20 @@
 package avr_debug_server;
 
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
-import java.io.PipedReader;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import javax.sound.midi.SysexMessage;
-
 public class Avarice {
 	
-	/*  */
 	private Thread m_process;
 	private Process avariceProcess;
 	ConnectionHandler handler;
-	//private Process m_readThread;
-
 	private String avaricePath;
-	//private String initialParams;
-	//private String params;
 	ArrayList<String> params = new ArrayList<String>();
-
-	// 
 	private String filePath="";
 
-	// private File program;
 	public String getFilePath() {
 		return filePath;
 	}
@@ -38,7 +23,6 @@ public class Avarice {
 		this.filePath = filePath;
 	}
 
-	// 
 	private String target = "atmega128";
 
 	public String getTarget() {
@@ -49,7 +33,6 @@ public class Avarice {
 		this.target = target;
 	}
 
-	// 
 	private String programmerPath = "/dev/ttyUSB0";
 
 	public String getProgrammerPath() {
@@ -60,7 +43,6 @@ public class Avarice {
 		this.programmerPath = programmerPath;
 	}
 
-	// 
 	private String port = "4242";
 
 	public String getPort() {
@@ -83,6 +65,7 @@ public class Avarice {
 	}
 
 	public void start() {
+		stop();
 		if (m_process.isAlive()) {
 			throw new IllegalStateException("Avarice has already been started");
 		}
@@ -90,12 +73,15 @@ public class Avarice {
 	}
 
 	public boolean isReadyForStart(){
-		return m_process.getState().toString().equals("NEW");
+		return m_process.getState().toString().equals("NEW")||
+				m_process.getState().toString().equals("TERMINATED");
 	}
 
 	public void stop(){
-		avariceProcess.destroy();
-		m_process.interrupt();
+		if(avariceProcess!=null)
+			avariceProcess.destroy();
+		if(m_process!=null)
+			m_process.interrupt();
 		m_process = null;
 		m_process = new Thread(new Runnable() {
 			@Override
@@ -108,10 +94,8 @@ public class Avarice {
 	private void runAvarice() {
 		System.out.println("(!)");
 		Pattern pattern = Pattern.compile("[\\w\\d\\s.,<>:-]*Downloading FLASH image to target[.]*\n$");;
-		//params + initialParams
 		params = new ArrayList<String>();
 		params.add(avaricePath);
-		//params.add("-d");
 		params.add("--erase");
 		params.add("--program");
 		params.add("--file");
@@ -124,8 +108,6 @@ public class Avarice {
 
 		String[] commandLine = new String[params.size()];
 		commandLine = params.toArray(commandLine);
-		/*for(String s: commandLine)
-			System.out.println(s);*/
 		try {
 			avariceProcess = Runtime.getRuntime().exec(commandLine, null, null);
 			String allOutput = "";
@@ -149,27 +131,12 @@ public class Avarice {
 					} catch (InterruptedException e) {
 						handler.startError();
 					}
-					
 				}
-					
 			}
-			
-			
-			//BufferedReader br = new BufferedReader(new InputStreamReader(stream));
-			/*
-			String line;
-			while (null != (line = br.readLine())) {
-				System.out.println(line);
-				stream.skip(0);
-			}*/
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
-		
 		System.out.println("Avarice finished");
-
 	}
 	
 	@Override
@@ -177,5 +144,4 @@ public class Avarice {
 		stop();
 		super.finalize();
 	}
-
 }
