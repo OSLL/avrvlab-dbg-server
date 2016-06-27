@@ -10,7 +10,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 class ConnectionHandler{
-	Avarice avarice;
+	Avarice avarice = null;
 	boolean waiting = true;
 	private MainFrame frame;
 	private Socket s;
@@ -22,7 +22,6 @@ class ConnectionHandler{
 	
 	ServerSocket server;
 	public void handle(){
-		avarice = new Avarice("avarice", this);
 		ServerSocket server = null;
 		try {
 			server = new ServerSocket(port);
@@ -33,8 +32,6 @@ class ConnectionHandler{
 		while(true)
 		{
 			try {
-				if(!avarice.isReadyForStart())
-					continue;
 				s = server.accept();
 				waiting = true;
 				frame.clientConnected();
@@ -56,10 +53,13 @@ class ConnectionHandler{
 					case "STRT":
 							//if(!avarice.isReadyForStart())
 								//avarice.stop();
-							avarice.setFilePath("file.hex");
-							avarice.setProgrammerPath(frame.getProgrammerPath());
-							avarice.setTarget(frame.getTargetName());
-							avarice.setPort(frame.getPort());
+							if(avarice != null)
+								if(avarice.isAlive()){
+									//System.out.println("He is alive!");
+									avarice.interrupt();
+								}
+								
+							avarice = new Avarice(frame.getTargetName(),frame.getProgrammerPath(),"file.hex",frame.getPort(), this);
 							avarice.start();
 							cont = false;
 							break;
