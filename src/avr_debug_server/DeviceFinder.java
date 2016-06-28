@@ -7,7 +7,7 @@ public class DeviceFinder{
 	private static final File file = new File("/dev/");
 	private static final Pattern pattern = Pattern.compile("ttyUSB\\d+");
 	
-	public static String[] printList(){
+	public static String[] getDeviceList(){
 		ArrayList<String> result = new ArrayList<>();
 		String list[] = file.list();
 		for(String s : list)

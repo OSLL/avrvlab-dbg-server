@@ -3,6 +3,8 @@ package avr_debug_server;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -25,6 +27,51 @@ public class DebugServerGui {
 		frame.setSize(550, 200);
 		frame.setLocationByPlatform(true);
 		frame.setVisible(true);
+		frame.addWindowListener(new WindowListener() {
+			
+			@Override
+			public void windowOpened(WindowEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void windowIconified(WindowEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void windowDeiconified(WindowEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void windowDeactivated(WindowEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void windowClosing(WindowEvent e) {
+				System.out.println("Closing");
+				handler.targetDevice.stopService();
+				
+			}
+			
+			@Override
+			public void windowClosed(WindowEvent e) {
+				System.out.println("Closed");
+				
+			}
+			
+			@Override
+			public void windowActivated(WindowEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+		});
 		int port=3129;
 		try{
 			if(args.length>1){
@@ -50,6 +97,7 @@ class MainFrame extends JFrame {
 		super(s);
 		createGui();
 	}
+
 	
 	private JPanel createTextFieldPair(String s, JComponent field){
 		JPanel panel = new JPanel();
@@ -86,14 +134,14 @@ class MainFrame extends JFrame {
 	}
 	
 	private void createGui(){
-		programmerPath = new JComboBox<String>(DeviceFinder.printList());
+		programmerPath = new JComboBox<String>(DeviceFinder.getDeviceList());
 		JPanel programmerPathPanel = createTextFieldPair("Программатор-отладчик: ", programmerPath);
 		JButton refreshButton = new JButton(new ImageIcon("refresh.png"));
 		refreshButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				programmerPath.removeAllItems();
-				for(String s : DeviceFinder.printList())
+				for(String s : DeviceFinder.getDeviceList())
 					programmerPath.addItem(s);
 			}
 		});

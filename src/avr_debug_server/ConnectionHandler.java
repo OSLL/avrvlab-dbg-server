@@ -10,14 +10,15 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 class ConnectionHandler{
-	Avarice avarice = null;
 	boolean waiting = true;
 	private MainFrame frame;
 	private Socket s;
 	private int port;
+	TargetDevice targetDevice;
 	public ConnectionHandler(MainFrame frame, int port) {
 		this.frame = frame;
 		this.port = port;
+		targetDevice = new TargetDevice(0, "atmega128", frame.getProgrammerPath());
 	}
 	
 	ServerSocket server;
@@ -48,24 +49,12 @@ class ConnectionHandler{
 					System.out.println("recieved: " + command.getCommand() + " " + command.getParameter());
 					switch (command.getCommand()) {
 					case "LOAD":
-							loadFile(dis, "file.hex");
-							break;
-					case "STRT":
-							//if(!avarice.isReadyForStart())
-								//avarice.stop();
-							if(avarice != null)
-								if(avarice.isAlive()){
-									//System.out.println("He is alive!");
-									avarice.interrupt();
-								}
-								
-							avarice = new Avarice(frame.getTargetName(),frame.getProgrammerPath(),"file.hex",frame.getPort(), this);
-							avarice.start();
+							targetDevice.handleNewRequest("221B", s);
 							cont = false;
 							break;
 					}
 				}
-				while(waiting);
+				//while(waiting);
 				frame.clientDisconnected();
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -118,8 +107,8 @@ class ConnectionHandler{
 	protected void finalize() throws Throwable {
 		if(server!=null)
 			server.close();
-		if(avarice!=null)
-			avarice.stop();
+		if(targetDevice!=null)
+			targetDevice.avariceFinished();
 		super.finalize();
 	}
 }

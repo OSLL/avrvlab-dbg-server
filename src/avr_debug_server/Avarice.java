@@ -13,15 +13,16 @@ public class Avarice extends Thread{
 	private String filePath; 		//path to .hex file to download in target before debug
 	private String port; 			//AVaRICE port which GDB connect  
 	private Process avariceProcess; //process handle
-	private ConnectionHandler handler;  
+	private AvariceListener listener;  
 	private boolean isSuccessStarted = false; //true if now AVaRICE is running without errors
 	
-	public Avarice(String target, String programmerPath, String filePath, String port, ConnectionHandler handler) {
+	public Avarice(String target, String programmerPath, String filePath, String port, AvariceListener listener) {
 		this.target = target;
 		this.programmerPath = programmerPath;
 		this.filePath = filePath;
 		this.port = port;
-		this.handler = handler;
+		this.listener = listener;
+		this.setDaemon(true);
 	}
 	
 	public void run(){
@@ -60,34 +61,42 @@ public class Avarice extends Thread{
 					if(pattern.matcher(allOutput).matches()){
 						//OK
 						isSuccessStarted = true;
-						System.out.println("OK");
-						handler.startOk();					
+						//System.out.println("OK");
+						//handler.startOk();
+						listener.successfulStart();
 					}else{
 						//Error - AVaRICE prints abnormal output 
-						System.out.println("Error");
-						handler.startError();
+						//System.out.println("Error");
+						//handler.startError();
+						listener.unsuccessfulStart("STARTERR");
 						finishing();
+						listener.avariceFinished();
 						return;
 					}
 				}
 
 			}
 			//Normal AVaRICE exiting
-			System.out.println("Bye bye");
 			if(!isSuccessStarted){
-				System.out.println("Error");
-				handler.startError();
+				//System.out.println("Error");
+				//handler.startError();
+				listener.unsuccessfulStart("STARTERR");
 			}
+			//System.out.println("Bye bye");
+			listener.avariceFinished();
 		} catch (InterruptedException e){
 			finishing();
-			System.out.println("Bye bye");
+			//System.out.println("Bye bye");
+			listener.avariceFinished();
 			return;
 		}
 		catch (IOException e) {
 			System.out.println("AVaRICE communication error:");
 			e.printStackTrace();
 			finishing();
-			handler.startError();
+			//handler.startError();
+			listener.unsuccessfulStart("IOERR");
+			listener.avariceFinished();
 			return;
 		}
 	}
@@ -108,8 +117,19 @@ public class Avarice extends Thread{
 	}
 	
 	private void finishing(){
-		if(avariceProcess!=null)
+		if(avariceProcess!=null){
 			avariceProcess.destroy();
+			System.out.println("destroy Avarice");
+		}
+			
 	}
 	
+	@Override
+	protected void finalize() throws Throwable {
+		if(avariceProcess!=null){
+			avariceProcess.destroy();
+		}
+			
+		super.finalize();
+	}
 }
