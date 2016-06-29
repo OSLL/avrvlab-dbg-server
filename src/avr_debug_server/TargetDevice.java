@@ -28,12 +28,16 @@ public class TargetDevice implements AvariceListener{
 		return currentClientKey;
 	}
 
+	public int getNumber() {
+		return number;
+	}
+
 	public TargetDevice(int number, String mcu, String path) {
 		this.number = number;
 		name = mcu;
 		this.path = path;
 		status = "READY";
-		port = ""+(initialPort + this.number);
+		port = ""+(initialPort + this.number); 
 		sketchFilename = number+"-mcu-sketch.hex";
 		currentClientKey = null;
 		currentClientSocket = null;
