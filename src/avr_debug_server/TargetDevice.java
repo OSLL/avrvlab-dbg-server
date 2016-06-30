@@ -1,10 +1,8 @@
 package avr_debug_server;
 
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.net.Socket;
 
@@ -13,7 +11,7 @@ public class TargetDevice implements AvariceListener{
 	private int number; 	//index number of programmer-debugger
 	private String name; 	//controller model (eg "atmega128")
 	private String path; 	//path to device (eg "/dev/ttyUSB0")
-	private String port; 	//AVaRICE port which GDB connect  
+	private int port; 		//AVaRICE port which GDB connect  
 	private String status;	//status of microcontroller (READY, DEBUG, UNAVAILABLE)
 	private String currentClientKey; //key of client working with MCU now
 	private Socket currentClientSocket;
@@ -21,6 +19,7 @@ public class TargetDevice implements AvariceListener{
 	private String sketchFilename;
 	
 	public String getStatus() {
+		//! Need to check file (path) existing !
 		return status;
 	}
 
@@ -32,12 +31,20 @@ public class TargetDevice implements AvariceListener{
 		return number;
 	}
 
+	public String getName() {
+		return name;
+	}
+
+	public String getPath() {
+		return path;
+	}
+
 	public TargetDevice(int number, String mcu, String path) {
 		this.number = number;
 		name = mcu;
 		this.path = path;
 		status = "READY";
-		port = ""+(initialPort + this.number); 
+		port = initialPort + this.number; 
 		sketchFilename = number+"-mcu-sketch.hex";
 		currentClientKey = null;
 		currentClientSocket = null;
@@ -50,15 +57,12 @@ public class TargetDevice implements AvariceListener{
 			currentClientKey = clientKey;
 			currentClientSocket = socket;
 			try {
-				InputStream inputStream = currentClientSocket.getInputStream();
-				DataInputStream dataInputStream = new DataInputStream(inputStream);
-				loadFile(dataInputStream);
+				loadFile();
 			} catch (IOException e) {
 				System.out.println("Download sketch failed");
 				stopService();
 				return;
 			}
-			
 			avarice = new Avarice(name, path, sketchFilename, port, this);
 			avarice.start();
 		}
@@ -69,6 +73,7 @@ public class TargetDevice implements AvariceListener{
 			if(avarice != null)
 				avarice.interrupt();
 			avarice = null;
+			currentClientKey = null;
 			status = "READY";
 		}
 	}
@@ -78,21 +83,12 @@ public class TargetDevice implements AvariceListener{
 		System.out.println("Avarice started");
 		if(currentClientSocket == null)
 			return;
+		Messenger.writeMessage(currentClientSocket, new Message("OK", port));
 		try {
-			/*
-			 * Say to Client about Avarice start
-			 * */
-			DebugServerCommand command = new DebugServerCommand("OKEY", (byte)0);
-			OutputStream str = currentClientSocket.getOutputStream();
-			DataOutputStream  dos = new DataOutputStream(str);
-			dos.write(command.getData());
-			/*
-			 * */
-			
 			currentClientSocket.close();
 		} catch (IOException e) {
-			currentClientSocket = null;
 		}
+		currentClientSocket = null;
 	}
 
 	@Override
@@ -100,20 +96,12 @@ public class TargetDevice implements AvariceListener{
 		System.out.println("Avarice error: " + reason);
 		if(currentClientSocket == null)
 			return;
+		Messenger.writeMessage(currentClientSocket, new Message(reason));
 		try {
-			/*
-			 * Say to Client about Error
-			 * */
-			DebugServerCommand command = new DebugServerCommand("ERRR", (byte)0);
-			OutputStream str = currentClientSocket.getOutputStream();
-			DataOutputStream  dos = new DataOutputStream(str);
-			dos.write(command.getData());
-			/*
-			 * */
 			currentClientSocket.close();
 		} catch (IOException e) {
-			currentClientSocket = null;
-		}		
+		}
+		currentClientSocket = null;
 	}
 
 	@Override
@@ -124,16 +112,21 @@ public class TargetDevice implements AvariceListener{
 		avarice = null;
 	}
 	
-	private void loadFile(DataInputStream dis) throws IOException{
-		
+	private void loadFile() throws IOException{
 		System.out.println("Loading file");
-		
+		InputStream inputStream = currentClientSocket.getInputStream();
+		DataInputStream dis = new DataInputStream(inputStream);
 			long size = dis.readLong();
 			RandomAccessFile file = new RandomAccessFile(sketchFilename, "rw");
 			for(long i=0; i<size; i++){
 				file.writeByte(dis.readByte());
 			}
 			file.close();
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		return number == ((TargetDevice)obj).number;
 	}
 	
 }

@@ -36,18 +36,11 @@ class ConnectionHandler{
 				s = server.accept();
 				waiting = true;
 				frame.clientConnected();
-				InputStream is = s.getInputStream();
-				DataInputStream dis = new DataInputStream(is);
-				byte byteCommand[] = new byte[5];
+				Message message = Messenger.readMessage(s);
 				boolean cont = true;
 				while(s.isConnected() && cont){
-					int bytesReaded = dis.read(byteCommand);
-					if (bytesReaded < 0)
-						break;
-					System.out.println(new String(byteCommand,"UTF-8"));
-					DebugServerCommand command = new DebugServerCommand(byteCommand);
-					System.out.println("recieved: " + command.getCommand() + " " + command.getParameter());
-					switch (command.getCommand()) {
+					System.out.println(message.getText());
+					switch (message.getText()) {
 					case "LOAD":
 							targetDevice.handleNewRequest("221B", s);
 							cont = false;

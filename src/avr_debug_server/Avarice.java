@@ -16,11 +16,11 @@ public class Avarice extends Thread{
 	private AvariceListener listener;  
 	private boolean isSuccessStarted = false; //true if now AVaRICE is running without errors
 	
-	public Avarice(String target, String programmerPath, String filePath, String port, AvariceListener listener) {
+	public Avarice(String target, String programmerPath, String filePath, int port, AvariceListener listener) {
 		this.target = target;
 		this.programmerPath = programmerPath;
 		this.filePath = filePath;
-		this.port = port;
+		this.port = port+"";
 		this.listener = listener;
 		this.setDaemon(true);
 	}
@@ -47,8 +47,14 @@ public class Avarice extends Thread{
 					if(count == -1)
 						break;
 				}
-				else
-					continue;
+				else{
+					try{
+						avariceProcess.exitValue();
+						break;
+					}catch(IllegalThreadStateException e){
+						continue;	
+					}
+				}
 				
 				if(!isSuccessStarted){ //if AVaRICE not started
 					allOutput = allOutput + new String(buf,0,count);
@@ -68,7 +74,7 @@ public class Avarice extends Thread{
 						//Error - AVaRICE prints abnormal output 
 						//System.out.println("Error");
 						//handler.startError();
-						listener.unsuccessfulStart("STARTERR");
+						listener.unsuccessfulStart("START_ERROR");
 						finishing();
 						listener.avariceFinished();
 						return;
@@ -80,7 +86,7 @@ public class Avarice extends Thread{
 			if(!isSuccessStarted){
 				//System.out.println("Error");
 				//handler.startError();
-				listener.unsuccessfulStart("STARTERR");
+				listener.unsuccessfulStart("START_ERROR");
 			}
 			//System.out.println("Bye bye");
 			listener.avariceFinished();
@@ -95,7 +101,7 @@ public class Avarice extends Thread{
 			e.printStackTrace();
 			finishing();
 			//handler.startError();
-			listener.unsuccessfulStart("IOERR");
+			listener.unsuccessfulStart("IO_ERROR");
 			listener.avariceFinished();
 			return;
 		}
