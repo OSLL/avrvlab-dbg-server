@@ -2,6 +2,7 @@ package avr_debug_server;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.swing.ImageIcon;
 import javax.swing.event.TableModelListener;
@@ -9,9 +10,9 @@ import javax.swing.table.TableModel;
 
 public class DevicesTableModel implements TableModel {
 	private Set<TableModelListener> listeners = new HashSet<>();
-	private List<DevicesTableElement> devices;
+	private CopyOnWriteArrayList<DevicesTableElement> devices;
 	
-	public DevicesTableModel(List<DevicesTableElement> devices) {
+	public DevicesTableModel(CopyOnWriteArrayList<DevicesTableElement> devices) {
 		this.devices = devices;
 	}
 	
