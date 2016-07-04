@@ -1,5 +1,8 @@
 package avr_debug_server;
+
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import javax.swing.Box;
 import javax.swing.JButton;
@@ -15,9 +18,11 @@ public class AddNewDeviceFrame extends JFrame {
 	private JComboBox<String> pathComboBox;
 	private JComboBox<String> targetComboBox;
 	private JTextField idTextField;
+	private MainFrame mainFrame;
 	
-	public AddNewDeviceFrame() {
+	public AddNewDeviceFrame(MainFrame mainFrame) {
 		super("Add new device");
+		this.mainFrame = mainFrame;
 		setDefaultCloseOperation(HIDE_ON_CLOSE);
 		createGui();
 	}
@@ -25,7 +30,10 @@ public class AddNewDeviceFrame extends JFrame {
 	@Override
 	public void setVisible(boolean b) {
 		if(b){
-			pathComboBox.setSelectedIndex(0);
+			pathComboBox.removeAllItems();
+			String[] devices = DeviceDispatcher.getSystemDeviceList();
+			for(String s : devices)
+				pathComboBox.addItem(s);
 			targetComboBox.setSelectedIndex(0);
 			idTextField.setText("");
 		}
@@ -33,13 +41,11 @@ public class AddNewDeviceFrame extends JFrame {
 	}
 	
 	private void createGui(){
-		String[] s = {"Test"};
-		
 		/*Path selecting*/
 		Box box1 = Box.createHorizontalBox();
 		JLabel label1 = new JLabel("Path:");
-		pathComboBox = new JComboBox<String>(s);
-		pathComboBox.setPreferredSize(new Dimension(150, 20));
+		pathComboBox = new JComboBox<String>();
+		pathComboBox.setPreferredSize(new Dimension(160, 20));
 		box1.add(label1);
 		box1.add(Box.createHorizontalStrut(15));
 		box1.add(pathComboBox);
@@ -47,8 +53,8 @@ public class AddNewDeviceFrame extends JFrame {
 		/*Target selecting*/
 		Box box2 = Box.createHorizontalBox();
 		JLabel label2 = new JLabel("Target:");
-		targetComboBox = new JComboBox<String>(s);
-		targetComboBox.setPreferredSize(new Dimension(150, 20));
+		targetComboBox = new JComboBox<String>(DeviceDispatcher.getSupportedDevices());
+		targetComboBox.setPreferredSize(new Dimension(160, 20));
 		box2.add(label2);
 		box2.add(Box.createHorizontalStrut(1));
 		box2.add(targetComboBox);
@@ -67,6 +73,22 @@ public class AddNewDeviceFrame extends JFrame {
 		/*Add button*/
 		Box box4 = Box.createHorizontalBox();
 		JButton button = new JButton("Add");
+		button.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				try{
+					int id = Integer.parseInt(idTextField.getText());
+					String selectedPath = (String)pathComboBox.getSelectedItem();
+					if(selectedPath == null)
+						return;
+					if(!mainFrame.addNewDevice(id, (String)targetComboBox.getSelectedItem(),selectedPath))
+						return;
+				}catch(NumberFormatException e){
+					return;
+				}
+				setVisible(false);
+			}
+		});
 		box4.add(button);
 		
 		/*Main box*/

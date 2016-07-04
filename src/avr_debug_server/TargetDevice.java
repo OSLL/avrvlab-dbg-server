@@ -126,7 +126,8 @@ public class TargetDevice implements AvariceListener{
 	
 	@Override
 	public boolean equals(Object obj) {
-		return number == ((TargetDevice)obj).number;
+		return ((number == ((TargetDevice)obj).number)||
+				(path.equals( ((TargetDevice)obj).path )));
 	}
 	
 }

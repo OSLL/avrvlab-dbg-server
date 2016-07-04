@@ -10,20 +10,24 @@ import javax.swing.table.TableModel;
 public class DevicesTable extends JTable {
 	private static final long serialVersionUID = 8112399479804595292L;
 	private final TableModel tableModel;
-	public DevicesTable(TableModel tm) {
+	private final MainFrame mainFrame;
+	public DevicesTable(TableModel tm, MainFrame mf) {
 		super(tm);
 		tableModel = tm;
+		mainFrame = mf;
 		setRowHeight(20);
 		setFocusable(false);
-		getColumn("del").setPreferredWidth(10);
-		getColumn("status").setPreferredWidth(10);
+		getColumn("id").setMaxWidth(30);
+		getColumn("del").setMaxWidth(50);
+		getColumn("status").setMaxWidth(50);
+		getColumn("target").setMaxWidth(150);
+		getColumn("path").setMaxWidth(150);
 		getColumn("del").setCellEditor(new DefaultCellEditor(new JComboBox<>()){
 			private static final long serialVersionUID = 1L;
 			@Override
 			public Component getTableCellEditorComponent(JTable table,
 					Object value, boolean isSelected, int row, int column) {
-				System.out.println("in" + row + " " + column);
-				System.out.println(tableModel.getValueAt(row, 0));
+				mainFrame.removeDevice((int)tableModel.getValueAt(row, 0));
 				return null;
 			}
 		});

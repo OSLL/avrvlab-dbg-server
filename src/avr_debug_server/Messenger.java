@@ -12,8 +12,6 @@ public class Messenger {
 			Message message = (Message) ois.readObject();
 			return message;
 		} catch (IOException | ClassNotFoundException e) {
-			System.out.println(e.getClass());
-			e.printStackTrace();
 			return null;
 		}
 	}

@@ -1,6 +1,5 @@
 package avr_debug_server;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -10,9 +9,13 @@ import javax.swing.table.TableModel;
 
 public class DevicesTableModel implements TableModel {
 	private Set<TableModelListener> listeners = new HashSet<>();
-	private CopyOnWriteArrayList<DevicesTableElement> devices;
+	private CopyOnWriteArrayList<TargetDevice> devices;
+	private ImageIcon readyStatus = new ImageIcon("ready.png");
+	private ImageIcon debugStatus = new ImageIcon("debug.png");
+	private ImageIcon unavaliableStatus = new ImageIcon("unavaliable.png");
+	private ImageIcon trashBin = new ImageIcon("bin.png");
 	
-	public DevicesTableModel(CopyOnWriteArrayList<DevicesTableElement> devices) {
+	public DevicesTableModel(CopyOnWriteArrayList<TargetDevice> devices) {
 		this.devices = devices;
 	}
 	
@@ -71,18 +74,26 @@ public class DevicesTableModel implements TableModel {
 
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
-		DevicesTableElement var = devices.get(rowIndex);
+		TargetDevice var = devices.get(rowIndex);
 		switch (columnIndex) {
 		case 0:
 			return var.getNumber();
 		case 1:
 			return var.getPath();
 		case 2:
-			return var.getTarget();
+			return var.getName();
 		case 3:
-			return var.getStatus();
+			switch(var.getStatus()){
+			case "READY":
+				return readyStatus;
+			case "DEBUG":
+				return debugStatus;
+			case "UNAVAILABLE":
+				return unavaliableStatus;
+			}
+			return unavaliableStatus;
 		case 4:
-			return var.getTrashBin();
+			return trashBin;
 		default:
 			return "";
 		}
