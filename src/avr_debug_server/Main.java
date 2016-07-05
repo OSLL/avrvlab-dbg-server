@@ -1,15 +1,20 @@
 package avr_debug_server;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
+import javax.swing.Box;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
-import javax.swing.plaf.SliderUI;
+import javax.swing.border.EmptyBorder;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 
 public class Main {
 	public static void main(String[] args) {
@@ -19,7 +24,7 @@ public class Main {
 		}catch(NumberFormatException|IndexOutOfBoundsException e){
 			port = 3129;
 		}
-		MainFrame mainFrame = new MainFrame("AVR remote debuggind server", port);
+		new MainFrame("AVR remote debuggind server", port);
 		//ConnectionHandler ch = new ConnectionHandler(2424);
 		
 	}
@@ -34,6 +39,7 @@ class MainFrame extends JFrame{
 	private AddNewDeviceFrame addDeviceWindow;
 	private int serverPort;
 	private ConnectionHandler connectionHandler;
+	private Thread guiUpdater;
 	public MainFrame(String s, int port){
 		super(s);		
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -44,7 +50,8 @@ class MainFrame extends JFrame{
 		tableModel = deviceDispatcher.getModel();
 		addDeviceWindow = new AddNewDeviceFrame(this);
 		serverPort = port;
-		connectionHandler = new ConnectionHandler(port, deviceDispatcher);
+		connectionHandler = new ConnectionHandler(serverPort, deviceDispatcher);
+		connectionHandler.start();
 		addWindowListener(new WindowListener() {
 			@Override
 			public void windowOpened(WindowEvent e) {
@@ -71,20 +78,43 @@ class MainFrame extends JFrame{
 			}
 		});
 		createGui();
+		guiUpdater = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					while(true){
+						Thread.sleep(1000);
+						//table.revalidate();
+						tableModel.fireTableDataChanged();
+						table.updateUI();
+					}
+				} catch (InterruptedException e) {
+				}
+			}
+		});
+		guiUpdater.start();
 	}
 	
 	private void createGui(){
 		table = new DevicesTable(tableModel, this);
 		JScrollPane pane = new JScrollPane(table);
 		getContentPane().add(pane,BorderLayout.WEST);
-		JButton button = new JButton("Add");
+		JButton button = new JButton(new ImageIcon("add.png"));
 		button.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				addDeviceWindow.setVisible(true);
 			}
 		});
-		getContentPane().add(button ,BorderLayout.NORTH);
+		//button.setPreferredSize(preferredSize)
+		Box box = Box.createHorizontalBox();
+		
+		button.setPreferredSize(new Dimension(30, 30));
+		button.setMaximumSize(button.getPreferredSize());
+		box.add(Box.createHorizontalStrut(400));
+		box.add(button);
+		box.setBorder(new EmptyBorder(3, 3, 3, 3));
+		getContentPane().add(box,BorderLayout.NORTH);
 		pack();
 	}
 	

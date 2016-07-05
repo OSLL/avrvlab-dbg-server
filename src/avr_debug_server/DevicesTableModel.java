@@ -5,9 +5,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.swing.ImageIcon;
 import javax.swing.event.TableModelListener;
-import javax.swing.table.TableModel;
+import javax.swing.table.AbstractTableModel;
 
-public class DevicesTableModel implements TableModel {
+public class DevicesTableModel extends AbstractTableModel{
+	private static final long serialVersionUID = 7758243940140610985L;
 	private Set<TableModelListener> listeners = new HashSet<>();
 	private CopyOnWriteArrayList<TargetDevice> devices;
 	private ImageIcon readyStatus = new ImageIcon("ready.png");

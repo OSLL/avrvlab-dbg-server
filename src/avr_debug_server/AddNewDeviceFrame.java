@@ -19,7 +19,6 @@ public class AddNewDeviceFrame extends JFrame {
 	private JComboBox<String> targetComboBox;
 	private JTextField idTextField;
 	private MainFrame mainFrame;
-	
 	public AddNewDeviceFrame(MainFrame mainFrame) {
 		super("Add new device");
 		this.mainFrame = mainFrame;
@@ -30,12 +29,12 @@ public class AddNewDeviceFrame extends JFrame {
 	@Override
 	public void setVisible(boolean b) {
 		if(b){
+			idTextField.setText("");
+			targetComboBox.setSelectedIndex(0);
 			pathComboBox.removeAllItems();
 			String[] devices = DeviceDispatcher.getSystemDeviceList();
 			for(String s : devices)
 				pathComboBox.addItem(s);
-			targetComboBox.setSelectedIndex(0);
-			idTextField.setText("");
 		}
 		super.setVisible(b);
 	}
@@ -65,15 +64,7 @@ public class AddNewDeviceFrame extends JFrame {
 		idTextField = new JTextField(5);
 		idTextField.setPreferredSize(new Dimension(50, 20));
 		idTextField.setMaximumSize(idTextField.getPreferredSize());
-		box3.add(label3);
-		box3.add(Box.createHorizontalStrut(35));
-		box3.add(idTextField);
-		box3.add(Box.createHorizontalGlue());
-		
-		/*Add button*/
-		Box box4 = Box.createHorizontalBox();
-		JButton button = new JButton("Add");
-		button.addActionListener(new ActionListener() {
+		idTextField.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				try{
@@ -86,9 +77,18 @@ public class AddNewDeviceFrame extends JFrame {
 				}catch(NumberFormatException e){
 					return;
 				}
-				setVisible(false);
+				setVisible(false);				
 			}
 		});
+		box3.add(label3);
+		box3.add(Box.createHorizontalStrut(35));
+		box3.add(idTextField);
+		box3.add(Box.createHorizontalGlue());
+		
+		/*Add button*/
+		Box box4 = Box.createHorizontalBox();
+		JButton button = new JButton("Add");
+		button.addActionListener(idTextField.getActionListeners()[0]);
 		box4.add(button);
 		
 		/*Main box*/
