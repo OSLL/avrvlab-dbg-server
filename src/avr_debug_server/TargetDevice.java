@@ -20,11 +20,13 @@ public class TargetDevice implements AvariceListener{
 	
 	public String getStatus() {
 		//! Need to check file (path) existing !
-		return status;
+		synchronized (this) {
+			return status;
+		}
 	}
 
 	public String getCurrentClientKey() {
-		return currentClientKey;
+			return currentClientKey;
 	}
 
 	public int getNumber() {
@@ -53,7 +55,7 @@ public class TargetDevice implements AvariceListener{
 	public void handleNewRequest(String clientKey, Socket socket){
 		synchronized (this) {
 			stopService();
-			status = "DEBUG";
+				status = "DEBUG";
 			currentClientKey = clientKey;
 			currentClientSocket = socket;
 			try {
@@ -74,7 +76,7 @@ public class TargetDevice implements AvariceListener{
 				avarice.interrupt();
 			avarice = null;
 			currentClientKey = null;
-			status = "READY";
+				status = "READY";				
 		}
 	}
 
@@ -107,7 +109,9 @@ public class TargetDevice implements AvariceListener{
 	@Override
 	public void avariceFinished() {
 		System.out.println("Avarice finished");
-		status = "READY";
+		synchronized (this) {
+			status = "READY";
+		}
 		currentClientKey = null;
 		avarice = null;
 	}

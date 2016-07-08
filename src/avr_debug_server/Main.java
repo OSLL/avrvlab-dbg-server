@@ -13,8 +13,6 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 
 public class Main {
 	public static void main(String[] args) {
@@ -84,9 +82,8 @@ class MainFrame extends JFrame{
 				try {
 					while(true){
 						Thread.sleep(1000);
-						//table.revalidate();
 						tableModel.fireTableDataChanged();
-						table.updateUI();
+						table.repaint();
 					}
 				} catch (InterruptedException e) {
 				}

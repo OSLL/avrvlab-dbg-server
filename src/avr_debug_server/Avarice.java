@@ -45,13 +45,19 @@ public class Avarice extends Thread{
 				if(isr.ready()){ //if some simbols avaliable for read
 					count = isr.read(buf);
 					if(count == -1)
+					{
+						System.out.println("count == -1");
 						break;
+					}
+						
 				}
 				else{
 					try{
 						avariceProcess.exitValue();
+						//System.out.println("exitValue()");
 						break;
 					}catch(IllegalThreadStateException e){
+						//System.out.println("IllegalThreadStateException");
 						continue;	
 					}
 				}
@@ -92,7 +98,7 @@ public class Avarice extends Thread{
 			listener.avariceFinished();
 		} catch (InterruptedException e){
 			finishing();
-			//System.out.println("Bye bye");
+			System.out.println("InterruptedException");
 			listener.avariceFinished();
 			return;
 		}
