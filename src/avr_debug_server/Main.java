@@ -6,11 +6,16 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.GregorianCalendar;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
+import javax.print.attribute.standard.SheetCollate;
 import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
 
@@ -38,6 +43,7 @@ class MainFrame extends JFrame{
 	private int serverPort;
 	private ConnectionHandler connectionHandler;
 	private Thread guiUpdater;
+	private Schedule schedule;
 	public MainFrame(String s, int port){
 		super(s);		
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -48,6 +54,10 @@ class MainFrame extends JFrame{
 		tableModel = deviceDispatcher.getModel();
 		addDeviceWindow = new AddNewDeviceFrame(this);
 		serverPort = port;
+		SortedSet<ReserveListItem> set = new TreeSet<>();
+		//set.add(new ReserveListItem("Key", 0, new GregorianCalendar(2016, 6, 9, 19, 40), new GregorianCalendar(2016, 6, 10, 01, 50)));
+		//set.add(new ReserveListItem("Key", 0, new GregorianCalendar(2016, 6, 9, 12, 10), new GregorianCalendar(2016, 6, 9, 15, 30)));
+		schedule = new Schedule(set, tableModel);
 		connectionHandler = new ConnectionHandler(serverPort, deviceDispatcher);
 		connectionHandler.start();
 		addWindowListener(new WindowListener() {
@@ -112,12 +122,18 @@ class MainFrame extends JFrame{
 		box.add(button);
 		box.setBorder(new EmptyBorder(3, 3, 3, 3));
 		getContentPane().add(box,BorderLayout.NORTH);
+		
+		JScrollPane scroll = new JScrollPane(schedule);
+		scroll.setPreferredSize(new Dimension(500, 300));
+		scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		getContentPane().add(scroll, BorderLayout.CENTER);
 		pack();
 	}
 	
 	public boolean addNewDevice(int number, String target, String path){
 		if(deviceDispatcher.addNewDevice(number, target, path)){
 			table.revalidate();
+			schedule.updateUI();
 			return true;
 		}
 		return false;
@@ -127,6 +143,7 @@ class MainFrame extends JFrame{
 	public boolean removeDevice(int number){
 		if(deviceDispatcher.removeDevice(number)){
 			table.revalidate();
+			schedule.updateUI();
 			return true;
 		}
 		return false;
