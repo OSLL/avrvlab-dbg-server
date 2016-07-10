@@ -43,7 +43,7 @@ class MainFrame extends JFrame{
 	private int serverPort;
 	private ConnectionHandler connectionHandler;
 	private Thread guiUpdater;
-	private Schedule schedule;
+	private SchedulePanel schedule;
 	public MainFrame(String s, int port){
 		super(s);		
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -55,9 +55,9 @@ class MainFrame extends JFrame{
 		addDeviceWindow = new AddNewDeviceFrame(this);
 		serverPort = port;
 		SortedSet<ReserveListItem> set = new TreeSet<>();
-		//set.add(new ReserveListItem("Key", 0, new GregorianCalendar(2016, 6, 9, 19, 40), new GregorianCalendar(2016, 6, 10, 01, 50)));
-		//set.add(new ReserveListItem("Key", 0, new GregorianCalendar(2016, 6, 9, 12, 10), new GregorianCalendar(2016, 6, 9, 15, 30)));
-		schedule = new Schedule(set, tableModel);
+		set.add(new ReserveListItem("Key", 0, new GregorianCalendar(2016, 6, 10, 19, 40), new GregorianCalendar(2016, 6, 11, 2, 50)));
+		set.add(new ReserveListItem("Key", 0, new GregorianCalendar(2016, 6, 10, 12, 10), new GregorianCalendar(2016, 6, 10, 15, 30)));
+		schedule = new SchedulePanel(set, tableModel);
 		connectionHandler = new ConnectionHandler(serverPort, deviceDispatcher);
 		connectionHandler.start();
 		addWindowListener(new WindowListener() {
