@@ -31,7 +31,7 @@ public class SchedulePanel extends JPanel{
 	private SortedSet<ReserveListItem> reserve;
 	private DevicesTableModel devices;
 	public SchedulePanel(SortedSet<ReserveListItem> reserve, DevicesTableModel devices) {
-		addMouseListener(new MouseListener() {
+		/*addMouseListener(new MouseListener() {
 			
 			@Override
 			public void mouseReleased(MouseEvent e) {
@@ -70,7 +70,7 @@ public class SchedulePanel extends JPanel{
 				// TODO Auto-generated method stub
 				
 			}
-		});
+		});*/
 		this.reserve = reserve;
 		this.devices = devices;
 		
@@ -80,7 +80,19 @@ public class SchedulePanel extends JPanel{
 		days = new ArrayList<>();
 		comboBox = new JComboBox<>();
 		this.add(comboBox);
+		comboBox.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				repaint();				
+			}
+		});
+		updateComboBox();
+		repaint();
+	}
+	
+	private void updateComboBox(){
 		comboBox.removeAllItems();
+		days.clear();
 		for(int i=0; i<daysAhead; i++){
 			GregorianCalendar c = new GregorianCalendar();
 			c.set(Calendar.HOUR_OF_DAY, 0);
@@ -90,18 +102,14 @@ public class SchedulePanel extends JPanel{
 			days.add(c);
 			comboBox.addItem(c.get(Calendar.DATE)+"."+(c.get(Calendar.MONTH)+1)+"."+ c.get(Calendar.YEAR));
 		}
-		comboBox.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				repaint();				
-			}
-		});
-		repaint();
 	}
 	
 	@Override
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
+		if(new GregorianCalendar().getTimeInMillis() - days.get(0).getTimeInMillis() > 86400000L){
+			updateComboBox();
+		}
 		Graphics2D g2d = (Graphics2D)g;
 		paintMcuInfo(g2d, timeBlockWidth, topMargin);
 		paintTimeScale(g2d, 0, mcuInfoBlockHeight+topMargin);
@@ -134,7 +142,7 @@ public class SchedulePanel extends JPanel{
 			int x2 = mcuInfoBlockWidth-1;
 			int y2;
 			if( (start.compareTo(startDayInterval)>=0) && (start.compareTo(endDayInterval)<=0)){
-				y1 = mcuInfoBlockHeight + start.get(Calendar.HOUR_OF_DAY)*timeBlockHeight + start.get(Calendar.MINUTE)/2;
+				y1 = topMargin+mcuInfoBlockHeight + start.get(Calendar.HOUR_OF_DAY)*timeBlockHeight + start.get(Calendar.MINUTE)/2;
 				y2 = (int)((end.getTimeInMillis() - start.getTimeInMillis())/(1000*60*2));				
 			}
 			else

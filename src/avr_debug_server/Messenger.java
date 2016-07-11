@@ -23,4 +23,22 @@ public class Messenger {
 		} catch (IOException e) {
 		}
 	}
+	
+	static SimpleReserveItem readSimpleReserveItem(Socket s){
+		try {
+			ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
+			SimpleReserveItem item = (SimpleReserveItem) ois.readObject();
+			return item;
+		} catch (IOException | ClassNotFoundException e) {
+			return null;
+		}		
+	}
+
+	static void writeSimpleReserveItem(Socket s, SimpleReserveItem item){
+		try {
+			ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
+			oos.writeObject(item);
+		} catch (IOException e) {
+		}		
+	}
 }

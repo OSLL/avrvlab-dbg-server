@@ -30,16 +30,26 @@ class ConnectionHandler extends Thread{
 					return;
 				}
 				socket = server.accept();
-				Message message = Messenger.readMessage(socket);
-				if(message == null)
-					throw new IOException();
-				switch(message.getText()){
-				case "LOAD":
-					deviceDispatcher.handleNewRequest(socket);
-					break;
-				}
+				Thread thread = new Thread(new Runnable() {
+					@Override
+					public void run() {
+						try {
+							Message message = Messenger.readMessage(socket);
+							if(message == null)
+								throw new IOException();
+							switch(message.getText()){
+							case "LOAD":
+								deviceDispatcher.handleNewRequest(socket);
+								break;
+							}
+						} catch (IOException e) {
+							System.err.println("Error communication with connected client");
+						}
+					}
+				});
+				thread.start();
 			} catch (IOException e) {
-				System.err.println("Error communication with connected client");
+				System.err.println("Error closing socket");
 				continue;
 			} 
 		}

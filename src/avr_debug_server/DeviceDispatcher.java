@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.SortedSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
@@ -24,22 +25,18 @@ public class DeviceDispatcher {
 	private static File devicesSystemPath = new File("/dev/");
 	private static Pattern devicesNamePattern = Pattern.compile("ttyUSB\\d+");
 	private static String supportedDevicesFile = "avarice_supported_devices.txt";
-	/*
-	 * private Calendar calendar
-	 * */
+	private ReserveCalendarManager calendarManager;
 	private CopyOnWriteArrayList<TargetDevice> devices;
 	private DevicesTableModel model;
 	
 	//one more parameter - calendar
-	public DeviceDispatcher() {
+	public DeviceDispatcher(ReserveCalendarManager calendarManager) {
 		/*
 		 * Possible load device list from file in future
 		 * */
 		devices = new CopyOnWriteArrayList<>();
 		model = new DevicesTableModel(devices);
-		/*
-		 * this.calendar = calendar
-		 * */
+		this.calendarManager = calendarManager;
 	}
 	
 	public DevicesTableModel getModel(){
@@ -69,19 +66,17 @@ public class DeviceDispatcher {
 	
 	public void handleNewRequest(Socket socket){
 
-		/*
-		 * Read key from socket
-		 * */
 		Message message = Messenger.readMessage(socket);
 		if(message == null)
 			return;
 		String key = message.getText();
 		
-		/*
-		 * Check key using calendar. If user can not debug now, return error to user
-		 * Get from calendar number of MCU (mcuNumber) for this user's key
-		 * */
-		int mcuNumber = 0;
+		int mcuNumber = calendarManager.getMcuIdByKey(key);
+		if(mcuNumber < 0){
+			Messenger.writeMessage(socket, new Message("ACCESS_ERROR"));
+			System.out.println("Access error: " + mcuNumber);
+			return;
+		}
 		
 		/*
 		 * Check status of device! And make sure the file ttyUSB* exists!!!
@@ -97,7 +92,6 @@ public class DeviceDispatcher {
 			Messenger.writeMessage(socket, new Message("BAD_DEV"));
 			return;
 		} 
-
 		
 		//Return OK to user and transfer of control to device
 		Messenger.writeMessage(socket, new Message("OK"));

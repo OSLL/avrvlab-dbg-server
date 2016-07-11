@@ -6,6 +6,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -44,20 +45,26 @@ class MainFrame extends JFrame{
 	private ConnectionHandler connectionHandler;
 	private Thread guiUpdater;
 	private SchedulePanel schedule;
+	private SortedSet<ReserveListItem> reserve;
+	private ReserveCalendarManager calendarManager;
 	public MainFrame(String s, int port){
 		super(s);		
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setSize(550, 200);
 		this.setLocationByPlatform(true);
 		this.setVisible(true);
-		deviceDispatcher = new DeviceDispatcher();
+		SortedSet<ReserveListItem> set = new TreeSet<>();
+		reserve = Collections.synchronizedSortedSet(set);
+		calendarManager = new ReserveCalendarManager(reserve);
+		deviceDispatcher = new DeviceDispatcher(calendarManager);
 		tableModel = deviceDispatcher.getModel();
 		addDeviceWindow = new AddNewDeviceFrame(this);
 		serverPort = port;
-		SortedSet<ReserveListItem> set = new TreeSet<>();
-		set.add(new ReserveListItem("Key", 0, new GregorianCalendar(2016, 6, 10, 19, 40), new GregorianCalendar(2016, 6, 11, 2, 50)));
-		set.add(new ReserveListItem("Key", 0, new GregorianCalendar(2016, 6, 10, 12, 10), new GregorianCalendar(2016, 6, 10, 15, 30)));
-		schedule = new SchedulePanel(set, tableModel);
+		reserve.add(new ReserveListItem("Key", 0, new GregorianCalendar(2016, 6, 10, 19, 40), new GregorianCalendar(2016, 6, 11, 2, 50)));
+		reserve.add(new ReserveListItem("KEY", 0, new GregorianCalendar(2016, 6, 11, 16, 3), new GregorianCalendar(2016, 6, 11, 16, 5)));
+		reserve.add(new ReserveListItem("KEY", 0, new GregorianCalendar(2016, 6, 11, 16, 30), new GregorianCalendar(2016, 6, 11, 16, 55)));
+		reserve.add(new ReserveListItem("KEY", 0, new GregorianCalendar(2016, 6, 11, 17, 10), new GregorianCalendar(2016, 6, 11, 17, 30)));
+		schedule = new SchedulePanel(reserve, tableModel);
 		connectionHandler = new ConnectionHandler(serverPort, deviceDispatcher);
 		connectionHandler.start();
 		addWindowListener(new WindowListener() {
@@ -94,6 +101,7 @@ class MainFrame extends JFrame{
 						Thread.sleep(1000);
 						tableModel.fireTableDataChanged();
 						table.repaint();
+						schedule.updateUI();
 					}
 				} catch (InterruptedException e) {
 				}
@@ -133,7 +141,6 @@ class MainFrame extends JFrame{
 	public boolean addNewDevice(int number, String target, String path){
 		if(deviceDispatcher.addNewDevice(number, target, path)){
 			table.revalidate();
-			schedule.updateUI();
 			return true;
 		}
 		return false;
@@ -143,7 +150,6 @@ class MainFrame extends JFrame{
 	public boolean removeDevice(int number){
 		if(deviceDispatcher.removeDevice(number)){
 			table.revalidate();
-			schedule.updateUI();
 			return true;
 		}
 		return false;
