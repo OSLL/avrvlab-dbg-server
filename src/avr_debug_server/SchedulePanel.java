@@ -6,15 +6,12 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.SortedSet;
 
 import javax.swing.JComboBox;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 public class SchedulePanel extends JPanel{
@@ -31,52 +28,8 @@ public class SchedulePanel extends JPanel{
 	private SortedSet<ReserveListItem> reserve;
 	private DevicesTableModel devices;
 	public SchedulePanel(SortedSet<ReserveListItem> reserve, DevicesTableModel devices) {
-		/*addMouseListener(new MouseListener() {
-			
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-			@Override
-			public void mousePressed(MouseEvent e) {
-				int x = e.getX();
-				int y = e.getY();
-				x-=timeBlockWidth;
-				y-=(mcuInfoBlockHeight+topMargin);
-				if(x<=0 || y<=0)
-					return;
-				x/=mcuInfoBlockWidth;
-				int y1 = (y%timeBlockHeight)*2;
-				y/=timeBlockHeight;
-				System.out.println("MCU "+ x + "time: "+y+":"+y1 );
-			}
-			
-			@Override
-			public void mouseExited(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-		});*/
 		this.reserve = reserve;
 		this.devices = devices;
-		
-		//setPreferredSize(new Dimension(300, maxHeight));
-		//setPreferredSize(new Dimension(devices.getRowCount()*mcuInfoBlockWidth+timeBlockWidth, maxHeight));
-		//setPreferredSize(new Dimension((devices.getRowCount()+1)*mcuInfoBlockWidth+timeBlockWidth, maxHeight));
 		days = new ArrayList<>();
 		comboBox = new JComboBox<>();
 		this.add(comboBox);

@@ -1,4 +1,4 @@
-package avr_debug_server;
+package avrdebug.communication;
 
 import java.io.Serializable;
 

@@ -4,16 +4,21 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import avrdebug.communication.Message;
+import avrdebug.communication.Messenger;
+
 class ConnectionHandler extends Thread{
 	
 	private Socket socket;
 	private int port;
 	private DeviceDispatcher deviceDispatcher;
 	private ServerSocket server;
+	private ReserveCalendarManager calendarManager;
 	
-	public ConnectionHandler(int port, DeviceDispatcher deviceDispatcher) {
+	public ConnectionHandler(int port, DeviceDispatcher deviceDispatcher, ReserveCalendarManager calendarManager) {
 		this.port = port;
 		this.deviceDispatcher = deviceDispatcher;
+		this.calendarManager = calendarManager;
 	}
 	
 	public void run() {
@@ -40,6 +45,13 @@ class ConnectionHandler extends Thread{
 							switch(message.getText()){
 							case "LOAD":
 								deviceDispatcher.handleNewRequest(socket);
+								break;
+							case "ADD":
+								calendarManager.handleAddRequest(socket);
+								break;
+							case "GET":
+								Messenger.writeSimpleReserveItemSet(socket, calendarManager.getSimpleReserveInfo());
+								Messenger.writeSimpleDeviceInfoList(socket, deviceDispatcher.getSimpleDeviceInfo());
 								break;
 							}
 						} catch (IOException e) {

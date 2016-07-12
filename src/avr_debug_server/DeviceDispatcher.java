@@ -6,9 +6,13 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.SortedSet;
+import java.util.HashSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
+
+import avrdebug.communication.Message;
+import avrdebug.communication.Messenger;
+import avrdebug.communication.SimpleDeviceInfo;
 
 /*
  * Key structure:
@@ -104,6 +108,13 @@ public class DeviceDispatcher {
 		}
 	}
 	
+	public void stopExpiredSessions(HashSet<String> sessions){
+		for(TargetDevice cur : devices){
+			if(sessions.contains(cur.getCurrentClientKey()))
+				cur.stopService();
+		}
+	}
+	
 	public static String[] getSystemDeviceList(){
 		ArrayList<String> result = new ArrayList<>();
 		String list[] = devicesSystemPath.list();
@@ -115,6 +126,12 @@ public class DeviceDispatcher {
 		return res;
 	}
 	
+	public ArrayList<SimpleDeviceInfo> getSimpleDeviceInfo(){
+		ArrayList<SimpleDeviceInfo> res = new ArrayList<>();
+		for(TargetDevice cur : devices)
+			res.add(new SimpleDeviceInfo(cur.getNumber(), cur.getName()));
+		return res;
+	}
 	
 	private static boolean isDeviceSystemNameMatches(String s){
 		return devicesNamePattern.matcher(s).matches();

@@ -6,6 +6,9 @@ import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.net.Socket;
 
+import avrdebug.communication.Message;
+import avrdebug.communication.Messenger;
+
 public class TargetDevice implements AvariceListener{
 	private static int initialPort = 4242;
 	private int number; 	//index number of programmer-debugger

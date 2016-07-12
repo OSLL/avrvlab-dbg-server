@@ -8,15 +8,14 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.Collections;
 import java.util.GregorianCalendar;
+import java.util.HashSet;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import javax.print.attribute.standard.SheetCollate;
 import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
 
@@ -65,7 +64,7 @@ class MainFrame extends JFrame{
 		reserve.add(new ReserveListItem("KEY", 0, new GregorianCalendar(2016, 6, 11, 16, 30), new GregorianCalendar(2016, 6, 11, 16, 55)));
 		reserve.add(new ReserveListItem("KEY", 0, new GregorianCalendar(2016, 6, 11, 17, 10), new GregorianCalendar(2016, 6, 11, 17, 30)));
 		schedule = new SchedulePanel(reserve, tableModel);
-		connectionHandler = new ConnectionHandler(serverPort, deviceDispatcher);
+		connectionHandler = new ConnectionHandler(serverPort, deviceDispatcher, calendarManager);
 		connectionHandler.start();
 		addWindowListener(new WindowListener() {
 			@Override
@@ -97,8 +96,13 @@ class MainFrame extends JFrame{
 			@Override
 			public void run() {
 				try {
+					HashSet<String> expiredSessionKeys;
 					while(true){
 						Thread.sleep(1000);
+						expiredSessionKeys = calendarManager.deleteOldReserve();
+						if(expiredSessionKeys != null){
+							deviceDispatcher.stopExpiredSessions(expiredSessionKeys);
+						}
 						tableModel.fireTableDataChanged();
 						table.repaint();
 						schedule.updateUI();
