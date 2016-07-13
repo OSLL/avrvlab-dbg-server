@@ -56,9 +56,9 @@ public class TargetDevice implements AvariceListener{
 	}
 	
 	public void handleNewRequest(String clientKey, Socket socket){
+		stopService();
 		synchronized (this) {
-			stopService();
-				status = "DEBUG";
+			status = "DEBUG";
 			currentClientKey = clientKey;
 			currentClientSocket = socket;
 			try {

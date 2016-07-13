@@ -39,6 +39,7 @@ public class Avarice extends Thread{
 			int count;
 			while(true){
 				if(Thread.interrupted()){
+					System.out.println("Interrupted!");
 					throw new InterruptedException();
 				}
 				
@@ -58,10 +59,11 @@ public class Avarice extends Thread{
 						break;
 					}catch(IllegalThreadStateException e){
 						//System.out.println("IllegalThreadStateException");
+						sleep(100);
 						continue;	
 					}
+					
 				}
-				
 				if(!isSuccessStarted){ //if AVaRICE not started
 					allOutput = allOutput + new String(buf,0,count);
 					for(int i=0;i<count;i++)
@@ -90,7 +92,7 @@ public class Avarice extends Thread{
 			}
 			//Normal AVaRICE exiting
 			if(!isSuccessStarted){
-				//System.out.println("Error");
+				System.out.println("START_ERROR");
 				//handler.startError();
 				listener.unsuccessfulStart("START_ERROR");
 			}
