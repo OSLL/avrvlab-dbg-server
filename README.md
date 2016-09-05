@@ -3,3 +3,4 @@
 
 Сборка
 ------------
+[Страница Wiki проекта](https://github.com/pro100kot/Arduino-debugging-server/wiki/Сборка)
