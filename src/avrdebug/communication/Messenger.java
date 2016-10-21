@@ -82,4 +82,40 @@ public class Messenger {
 		}		
 	}
 	
+	public static SimulAVRInitData readSimulAVRInitData(Socket s){
+		try {
+			ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
+			SimulAVRInitData data = (SimulAVRInitData) ois.readObject();
+			return data;
+		} catch (IOException | ClassNotFoundException e) {
+			return null;
+		}
+	}
+	
+	public static void writeSimulAVRInitData(Socket s, SimulAVRInitData data){
+		try {
+			ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
+			oos.writeObject(data);
+		} catch (IOException e) {
+		}
+	}
+	
+	public static SimulAVRConfigs readSimulAVRConfigs(Socket s){
+		try {
+			ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
+			SimulAVRConfigs data = (SimulAVRConfigs) ois.readObject();
+			return data;
+		} catch (IOException | ClassNotFoundException e) {
+			return null;
+		}
+	}
+	
+	public static void writeSimulAVRConfigs(Socket s, SimulAVRConfigs data){
+		try {
+			ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
+			oos.writeObject(data);
+		} catch (IOException e) {
+		}
+	}
+	
 }

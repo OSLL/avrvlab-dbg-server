@@ -1,5 +1,6 @@
 package avr_debug_server;
 
+import avrdebug.communication.SimulAVRConfigs;
 import avrdebug.communication.SimulAVRInitData;
 
 import java.io.*;
@@ -7,15 +8,125 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SimulAVR {
-    private static String avrFile = "simulavr";
+public class SimulAVR extends Thread{
+    private static String simulAvrPath = "/home/constantin/simulavr";
     private static String dumpFile = "simulavr.dump";
 
     private static boolean isDumped = false;
     private static boolean isLoaded = false;
 
     private static SimulAVRInitData data = null;
+    
+	private SimulAVRConfigs simulavrConfig;
+	private String port;
+	private String sketchFilename;
+	private String vcdTraceFilename;
+	private String vcdInputTraceFilename;
+	private String cpuTraceFilename;
+	private Process simulAvrProcess;
+	private SimulAVRListener listener;
 
+	public SimulAVR(SimulAVRConfigs simulavrConfig, int port, String sketchFilename, String vcdTraceFilename, String cpuTraceFilename, SimulAVRListener listener){
+		this.simulavrConfig = simulavrConfig;
+		this.port = port+"";
+		this.sketchFilename = sketchFilename;
+		this.vcdTraceFilename = vcdTraceFilename;
+		this.cpuTraceFilename = cpuTraceFilename;
+		this.vcdInputTraceFilename = this.vcdTraceFilename+"-input";
+		this.listener = listener;
+		this.setDaemon(true);
+	}
+	
+	public void run(){
+		ArrayList<String> params = collectOptions();
+		String[] commandLine = new String[params.size()];
+		commandLine = params.toArray(commandLine);
+		try {
+			simulAvrProcess = Runtime.getRuntime().exec(commandLine, null, null);
+			InputStream stream = simulAvrProcess.getInputStream();
+			InputStreamReader isr = new InputStreamReader(stream);
+			char buf[] = new char[15];
+			int count;
+			while(true){
+				if(Thread.interrupted()){
+					System.out.println("Interrupted!");
+					throw new InterruptedException();
+				}
+				if(isr.ready()){
+					count = isr.read(buf);
+					for(int i=0;i<count;i++)
+						System.out.print(buf[i]);
+				}
+					
+						
+				try{
+					simulAvrProcess.exitValue();
+					break;
+				}catch(IllegalThreadStateException e){
+					sleep(100);
+					continue;
+				}
+				
+			}
+			System.out.println("Finished (1) ");
+			listener.finishedSuccess();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			listener.finishedBad();
+		} catch (InterruptedException e) {
+			System.out.println("Finished (2) ");
+			listener.finishedSuccess();
+		}
+	}
+	
+	private ArrayList<String> collectOptions(){
+		ArrayList<String> params = new ArrayList<String>();
+		params.add(simulAvrPath);
+		params.add("--file");
+		params.add(sketchFilename);
+		params.add("--device");
+		params.add(simulavrConfig.getSelectedMcu());
+		params.add("--cpufrequency");
+		params.add(simulavrConfig.getCpuFreq()+"");
+		if(simulavrConfig.isVCDTraceEnable()){
+			try {
+				createVcdInputFile();
+				params.add("-c");
+				params.add("vcd:"+vcdInputTraceFilename+":"+vcdTraceFilename);
+			} catch (IOException e) {
+			}
+		}
+		if(simulavrConfig.isDebugEnable()){
+			params.add("--gdbserver");
+			params.add("-p");
+			params.add(port);
+		}
+//		if(simulavrConfig.isTraceEnable()){
+//			params.add("--trace");
+//			params.add(cpuTraceFilename);
+//		}
+		if(!simulavrConfig.isDebugEnable()){
+			if(simulavrConfig.getMaxRunTime()>0){
+				params.add("-m");
+				params.add(simulavrConfig.getMaxRunTime()+"");
+			}
+				
+		}
+		return params;
+	}
+	
+	private void createVcdInputFile() throws IOException {
+		BufferedWriter bw = new BufferedWriter(new FileWriter(vcdInputTraceFilename));
+		for (String source : simulavrConfig.getVcdSources().keySet()) {
+			if (simulavrConfig.getVcdSources().get(source)) {
+				bw.write(source);
+				bw.newLine();
+			}
+		}
+		bw.close();
+	}	
+	
     /**
      * @return
      *  SimulAVR map that contains devices as keys
@@ -66,11 +177,11 @@ public class SimulAVR {
 
 
     public static void setAvrFile(String fileName) {
-        SimulAVR.avrFile = fileName;
+        SimulAVR.simulAvrPath = fileName;
     }
 
     public static String getAvrFile() {
-        return SimulAVR.avrFile;
+        return SimulAVR.simulAvrPath;
     }
 
     public static void setDumpFile(String filename) {
@@ -106,7 +217,7 @@ public class SimulAVR {
         InputStreamReader is = null;
         BufferedReader input = null;
         try {
-            Process avrProc = Runtime.getRuntime().exec(SimulAVR.avrFile + " -h");
+            Process avrProc = Runtime.getRuntime().exec(SimulAVR.simulAvrPath + " -h");
             avrProc.waitFor();
 
             is = new InputStreamReader(avrProc.getInputStream());
@@ -121,19 +232,20 @@ public class SimulAVR {
 
                     // Read device types
                     while ((line = input.readLine()) != null) {
+                    	if(line.equals(""))
+                    		continue;
                         map.put(line.trim(), null);
                     }
                     break;
                 }
             }
 
-            String execString = SimulAVR.avrFile + " -o - -d ";
+            String execString = SimulAVR.simulAvrPath + " -o - -d ";
             ArrayList<String> list;
             for (Map.Entry<String, ArrayList<String>> entry : map.entrySet()) {
                 if (entry.getKey().equals("")) {
                     continue;
                 }
-
                 avrProc = Runtime.getRuntime().exec(execString + entry.getKey());
                 avrProc.waitFor();
 
@@ -142,7 +254,7 @@ public class SimulAVR {
 
                 line = input.readLine(); // Non informative line
                 if (line == null) {
-                    throw new IOException();
+                    continue;//throw new IOException();
                 }
 
                 list = new ArrayList<>();
@@ -162,7 +274,7 @@ public class SimulAVR {
 
             return data;
         } catch (IOException e) {
-            throw new Exception("Failed to execute simulavr process: " + SimulAVR.avrFile);
+            throw new Exception("Failed to execute simulavr process: " + SimulAVR.simulAvrPath);
         } finally {
             if (is != null) {
                 is.close();
@@ -191,11 +303,11 @@ public class SimulAVR {
         } catch (IOException e) {
             throw new Exception("Failed to open cache file");
         } finally {
-            if (fos != null) {
-                fos.close();
-            }
             if (out != null) {
                 out.close();
+            }
+        	if (fos != null) {
+                fos.close();
             }
         }
     }
@@ -210,20 +322,9 @@ public class SimulAVR {
             return true;
         }
 
-        FileOutputStream fos = null;
-        try {
-            fos = new FileOutputStream(SimulAVR.dumpFile);
-        } catch (FileNotFoundException e) {
-            return false;
-        } finally {
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (IOException e) {
-                    return false;
-                }
-            }
-        }
+        File file = new File(dumpFile);
+        if(!file.exists())
+        	return false;
 
         SimulAVR.isDumped = true;
         return true;

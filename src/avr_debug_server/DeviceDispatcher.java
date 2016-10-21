@@ -33,6 +33,8 @@ public class DeviceDispatcher {
 	private CopyOnWriteArrayList<TargetDevice> devices;
 	private DevicesTableModel model;
 	
+	private Simulator simulator = new Simulator(0);
+	
 	//one more parameter - calendar
 	public DeviceDispatcher(ReserveCalendarManager calendarManager) {
 		/*
@@ -100,6 +102,10 @@ public class DeviceDispatcher {
 		//Return OK to user and transfer of control to device
 		Messenger.writeMessage(socket, new Message("OK"));
 		device.handleNewRequest(key, socket);
+	}
+	
+	public void handleNewSimulatorRequest(Socket socket){
+		simulator.handleNewRequest("symul", socket);
 	}
 	
 	public void stopAllService(){

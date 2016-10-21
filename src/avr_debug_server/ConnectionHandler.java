@@ -6,6 +6,7 @@ import java.net.Socket;
 
 import avrdebug.communication.Message;
 import avrdebug.communication.Messenger;
+import avrdebug.communication.SimulAVRInitData;
 
 class ConnectionHandler extends Thread{
 	
@@ -46,6 +47,9 @@ class ConnectionHandler extends Thread{
 							case "LOAD":
 								deviceDispatcher.handleNewRequest(socket);
 								break;
+							case "LOAD_SIMUL":
+								deviceDispatcher.handleNewSimulatorRequest(socket);
+								break;
 							case "ADD":
 								calendarManager.handleAddRequest(socket);
 								break;
@@ -53,6 +57,18 @@ class ConnectionHandler extends Thread{
 								Messenger.writeSimpleReserveItemSet(socket, calendarManager.getSimpleReserveInfo());
 								Messenger.writeSimpleDeviceInfoList(socket, deviceDispatcher.getSimpleDeviceInfo());
 								break;
+							case "GET_INIT_SIMUL_CONFIG":
+								try {
+									Messenger.writeSimulAVRInitData(socket, SimulAVR.getInitData());
+								} catch (Exception e) {
+									SimulAVRInitData data = new SimulAVRInitData();
+									data.setMcuVCDSources(null);
+									Messenger.writeSimulAVRInitData(socket, data);
+								}
+								break;
+							default:
+								System.out.println("Wrong Message");
+								socket.close();
 							}
 						} catch (IOException e) {
 							System.err.println("Error communication with connected client");
