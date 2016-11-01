@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.net.Socket;
 
+import avrdebug.communication.Message;
 import avrdebug.communication.Messenger;
 import avrdebug.communication.SimulAVRConfigs;
 
@@ -24,9 +25,11 @@ public class Simulator implements SimulAVRListener {
 	private String cpuTraceFilename;
 	private SimulAVR simulAvr;
 	private SimulAVRConfigs simulavrConfig;
+	private String status;
 	
 	public Simulator(int number){
 		this.number = number;
+		status = "READY";
 		// TODO Определить алгоритм присвоения порта
 		port = initialPort+this.number;
 		// TODO Определить алгоритм именования файлов
@@ -34,8 +37,38 @@ public class Simulator implements SimulAVRListener {
 		vcdTraceFilename = port + "-simulavr-vcd-output";
 		cpuTraceFilename = port + "-simulavr-cpu-output";
 	}
+			
+	public int getNumber() {
+		return number;
+	}
 	
+	public String getStatus(){
+		return status;
+	}
+
 	public void handleNewRequest(String clientKey, Socket socket){
+		Message message = Messenger.readMessage(socket);
+		if(message == null)
+			return;
+		String action = message.getText();
+		
+		System.out.println("Check for action: " + action);
+		if(action.equals("STOP")){
+			System.out.println("action: STOP");
+			stopService();
+			return;
+		}
+		if(!action.equals("START")){
+			try {
+				socket.close();
+			} catch (IOException e) {
+			}
+			return;
+		}
+		
+		System.out.println("action: START");
+		
+		stopService();
 		currentClientKey = clientKey;
 		currentClientSocket = socket;
 		/*remove files
@@ -59,8 +92,11 @@ public class Simulator implements SimulAVRListener {
 			System.out.println("Simulator: download sketch failed");
 			return;
 		}
+		System.out.println("Prepare to start simulator");
 		simulAvr = new SimulAVR(simulavrConfig, port, sketchFilename, vcdTraceFilename, cpuTraceFilename, this);
 		simulAvr.start();
+		System.out.println("Simulator started, IN USE");
+		status = "IN USE";
 	}
 
 	private void loadFile() throws IOException{
@@ -88,6 +124,16 @@ public class Simulator implements SimulAVRListener {
 		rfile.close();
 	}
 	
+	public void stopService(){
+		synchronized (this) {
+			if(simulAvr != null)
+				simulAvr.interrupt();
+			simulAvr = null;
+			currentClientKey = null;
+				status = "READY";				
+		}
+	}
+	
 	@Override
 	public void started() {
 		System.out.println("SimulAVR started");
@@ -109,11 +155,25 @@ public class Simulator implements SimulAVRListener {
 		}
 		//check for result files
 		//if exists - send to client
+		status = "READY";
 	}
 
 	@Override
 	public void finishedBad() {
 		System.out.println("SimulAVR finished bad");
+		status = "READY";
 		
 	}
+
+	@Override
+	public void interrupted() {
+		System.out.println("simulator interrupted");
+		status = "READY";
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		return number == ((Simulator)obj).number;
+	}
+
 }

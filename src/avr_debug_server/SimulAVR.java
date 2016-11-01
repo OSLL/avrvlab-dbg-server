@@ -68,15 +68,16 @@ public class SimulAVR extends Thread{
 				}
 				
 			}
-			System.out.println("Finished (1) ");
+			System.out.println("Simulavr finished");
 			listener.finishedSuccess();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			finishing();
 			e.printStackTrace();
 			listener.finishedBad();
 		} catch (InterruptedException e) {
-			System.out.println("Finished (2) ");
-			listener.finishedSuccess();
+			finishing();
+			System.out.println("Simulavr interrupted");
+			listener.interrupted();
 		}
 	}
 	
@@ -125,7 +126,22 @@ public class SimulAVR extends Thread{
 			}
 		}
 		bw.close();
-	}	
+	}
+	
+	private void finishing(){
+		if(simulAvrProcess!=null){
+			simulAvrProcess.destroy();
+		}
+			
+	}
+	
+	@Override
+	protected void finalize() throws Throwable {
+		if(simulAvrProcess!=null){
+			simulAvrProcess.destroy();
+		}
+		super.finalize();
+	}
 	
     /**
      * @return

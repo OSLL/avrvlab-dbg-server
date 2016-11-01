@@ -12,14 +12,15 @@ class ConnectionHandler extends Thread{
 	
 	private Socket socket;
 	private int port;
-	private DeviceDispatcher deviceDispatcher;
+	//private DeviceDispatcher deviceDispatcher;
+	private SimulatorDispatcher simulatorDispatcher;
 	private ServerSocket server;
-	private ReserveCalendarManager calendarManager;
+	//private ReserveCalendarManager calendarManager;
 	
-	public ConnectionHandler(int port, DeviceDispatcher deviceDispatcher, ReserveCalendarManager calendarManager) {
+	public ConnectionHandler(int port, SimulatorDispatcher simulatorDispatcher, ReserveCalendarManager calendarManager) {
 		this.port = port;
-		this.deviceDispatcher = deviceDispatcher;
-		this.calendarManager = calendarManager;
+		this.simulatorDispatcher = simulatorDispatcher;
+		//this.calendarManager = calendarManager;
 	}
 	
 	public void run() {
@@ -44,11 +45,8 @@ class ConnectionHandler extends Thread{
 							if(message == null)
 								throw new IOException();
 							switch(message.getText()){
-							case "LOAD":
+							/*case "LOAD":
 								deviceDispatcher.handleNewRequest(socket);
-								break;
-							case "LOAD_SIMUL":
-								deviceDispatcher.handleNewSimulatorRequest(socket);
 								break;
 							case "ADD":
 								calendarManager.handleAddRequest(socket);
@@ -56,6 +54,10 @@ class ConnectionHandler extends Thread{
 							case "GET":
 								Messenger.writeSimpleReserveItemSet(socket, calendarManager.getSimpleReserveInfo());
 								Messenger.writeSimpleDeviceInfoList(socket, deviceDispatcher.getSimpleDeviceInfo());
+								break;*/
+							case "SIMUL":
+								System.out.println("GET: SIMUL");
+								simulatorDispatcher.handleNewRequest(socket);
 								break;
 							case "GET_INIT_SIMUL_CONFIG":
 								try {
