@@ -142,13 +142,18 @@ public class Simulator implements SimulAVRListener {
 	@Override
 	public void finishedSuccess() {
 		System.out.println("SimulAVR finished success");
-		if (currentClientSocket == null)
+		if (currentClientSocket == null){
+			System.out.println("currentClientSocket == null");
 			return;
+		}
+			
 		try {
 			if (simulavrConfig.isVCDTraceEnable()) {
 				File file = new File(vcdTraceFilename);
-				if(file.exists())
+				if(file.exists()){
+					System.out.println("Sending file back");
 					sendFile(currentClientSocket, file);
+				}
 			}
 			currentClientSocket.close();
 		} catch (IOException e) {

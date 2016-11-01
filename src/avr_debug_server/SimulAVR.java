@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class SimulAVR extends Thread{
-    private static String simulAvrPath = "/home/constantin/simulavr";
+    private static String simulAvrPath = "./simulavr";
     private static String dumpFile = "simulavr.dump";
 
     private static boolean isDumped = false;
