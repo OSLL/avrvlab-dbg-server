@@ -1,4 +1,4 @@
-package simulavr;
+package avr_debug_server;
 
 import avrdebug.communication.SimulAVRConfigs;
 import avrdebug.communication.SimulAVRInitData;
