@@ -1,4 +1,4 @@
-package avr_debug_server;
+package simulavr;
 
 import avrdebug.communication.SimulAVRConfigs;
 import avrdebug.communication.SimulAVRInitData;
@@ -137,7 +137,7 @@ public class SimulAVR extends Thread{
     public static SimulAVRInitData getInitData()
             throws Exception {
         // If there is already loaded in memory info
-        if (isLoaded) {
+        if (isLoaded && SimulAVR.data != null) {
             return SimulAVR.data;
         }
 
@@ -299,7 +299,7 @@ public class SimulAVR extends Thread{
 
             SimulAVR.isDumped = true;
         } catch (FileNotFoundException e) {
-            throw e;
+            throw new Exception("Dump file not writable!");
         } catch (IOException e) {
             throw new Exception("Failed to open cache file");
         } finally {
@@ -323,7 +323,7 @@ public class SimulAVR extends Thread{
         }
 
         File file = new File(dumpFile);
-        if(!file.exists())
+        if(!file.exists() || file.isDirectory() || file.length() == 0)
         	return false;
 
         SimulAVR.isDumped = true;
