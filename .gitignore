@@ -1,5 +1,6 @@
 simulavr.dump
 classes/*
-.libs/*
+bin/*
 simulavr
-./simulator-temp-files/*
+simulator-temp-files/*
+libs/*
