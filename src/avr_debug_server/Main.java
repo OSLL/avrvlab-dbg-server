@@ -129,7 +129,7 @@ class MainFrame extends JFrame{
 		//table = new DevicesTable(tableModel, this);
 		//JScrollPane pane = new JScrollPane(table);
 		getContentPane().add(pane,BorderLayout.WEST);
-		JButton button = new JButton(new ImageIcon("add.png"));
+		JButton button = new JButton(new ImageIcon("icons/add.png"));
 		button.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {

@@ -5,7 +5,7 @@
 ------------
 Установка и сборка симулятора AVaRICE:
 
-    git clone git://git.savannah.nongnu.org/simulavr.git.
+    git clone git://git.savannah.nongnu.org/simulavr.git
     cd simulavr
     sudo apt-get install build-essential g++ libtool-bin binutils-dev texinfo
     ./bootstrap

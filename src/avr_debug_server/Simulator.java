@@ -9,12 +9,15 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.net.Socket;
 
+import javax.swing.plaf.metal.MetalIconFactory.FolderIcon16;
+
 import avrdebug.communication.Message;
 import avrdebug.communication.Messenger;
 import avrdebug.communication.SimulAVRConfigs;
 
 public class Simulator implements SimulAVRListener {
 	private static int initialPort = 4442;
+	private static File tempFolder = new File("simulator-temp-files"); 
 	private int number; 	//index number of programmer-debugger
 	private int port; 		//AVaRICE port which GDB connect  
 	private String currentClientKey; //key of client working with MCU now
@@ -33,9 +36,13 @@ public class Simulator implements SimulAVRListener {
 		// TODO Определить алгоритм присвоения порта
 		port = initialPort+this.number;
 		// TODO Определить алгоритм именования файлов
-		sketchFilename = port + "-simulavr-sketch.elf";
-		vcdTraceFilename = port + "-simulavr-vcd-output";
-		cpuTraceFilename = port + "-simulavr-cpu-output";
+		if(!tempFolder.exists())
+			tempFolder.mkdir();
+		sketchFilename = tempFolder.getAbsolutePath() + "/" + port + "-simulavr-sketch.elf";
+		vcdTraceFilename = tempFolder.getAbsolutePath() + "/" + port + "-simulavr-vcd-output";
+		cpuTraceFilename = tempFolder.getAbsolutePath() + "/" + port + "-simulavr-cpu-output";
+
+		
 	}
 			
 	public int getNumber() {

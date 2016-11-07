@@ -11,10 +11,10 @@ public class DevicesTableModel extends AbstractTableModel{
 	private static final long serialVersionUID = 7758243940140610985L;
 	private Set<TableModelListener> listeners = new HashSet<>();
 	private CopyOnWriteArrayList<TargetDevice> devices;
-	private ImageIcon readyStatus = new ImageIcon("ready.png");
-	private ImageIcon debugStatus = new ImageIcon("debug.png");
-	private ImageIcon unavaliableStatus = new ImageIcon("unavaliable.png");
-	private ImageIcon trashBin = new ImageIcon("bin.png");
+	private ImageIcon readyStatus = new ImageIcon("icons/ready.png");
+	private ImageIcon debugStatus = new ImageIcon("icons/debug.png");
+	private ImageIcon unavaliableStatus = new ImageIcon("icons/unavaliable.png");
+	private ImageIcon trashBin = new ImageIcon("icons/bin.png");
 	
 	public DevicesTableModel(CopyOnWriteArrayList<TargetDevice> devices) {
 		this.devices = devices;

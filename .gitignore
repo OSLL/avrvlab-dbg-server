@@ -1,7 +1,5 @@
-*.elf
-*simulavr-vcd-output
-*simulavr-vcd-output-input
 simulavr.dump
 classes/*
 .libs/*
 simulavr
+./simulator-temp-files/*

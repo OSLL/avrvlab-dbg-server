@@ -46,13 +46,13 @@ public class SimulatorDispatcher {
 		System.out.println("KEY: "+key);
 		Simulator currentSimul = null;
 		switch (key) {
-		case "SIMUL1":
+		case "SIMUL0":
 			currentSimul = simulators.get(0);
 			break;
-		case "SIMUL2":
+		case "SIMUL1":
 			currentSimul = simulators.get(1);
 			break;
-		case "SIMUL3":
+		case "SIMUL2":
 			currentSimul = simulators.get(2);
 			break;			
 		}
