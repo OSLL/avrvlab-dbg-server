@@ -17,6 +17,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.border.EmptyBorder;
 
 public class Main {
@@ -37,13 +38,16 @@ public class Main {
 class MainFrame extends JFrame{
 	private static final long serialVersionUID = 712987842762414398L;
 	private DeviceDispatcher deviceDispatcher;
-	private DevicesTableModel tableModel;
-	private DevicesTable table;
+	private SimulatorDispatcher simularDispatcher;
+	private SimulatorsTableModel simulatorsModel;
+	//private DevicesTableModel tableModel;
+	//private DevicesTable table;
+	private JTable simulatorTable;
 	private AddNewDeviceFrame addDeviceWindow;
 	private int serverPort;
 	private ConnectionHandler connectionHandler;
 	private Thread guiUpdater;
-	private SchedulePanel schedule;
+	//private SchedulePanel schedule;
 	private SortedSet<ReserveListItem> reserve;
 	private ReserveCalendarManager calendarManager;
 	public MainFrame(String s, int port){
@@ -56,15 +60,18 @@ class MainFrame extends JFrame{
 		reserve = Collections.synchronizedSortedSet(set);
 		calendarManager = new ReserveCalendarManager(reserve);
 		deviceDispatcher = new DeviceDispatcher(calendarManager);
-		tableModel = deviceDispatcher.getModel();
+		//tableModel = deviceDispatcher.getModel();
+		simularDispatcher = new SimulatorDispatcher();
+		simularDispatcher.addNewDevice(0);
+		simularDispatcher.addNewDevice(1);
+		simularDispatcher.addNewDevice(2);
+		simulatorsModel = simularDispatcher.getModel();
+		
 		addDeviceWindow = new AddNewDeviceFrame(this);
 		serverPort = port;
-		reserve.add(new ReserveListItem("Key", 0, new GregorianCalendar(2016, 6, 10, 19, 40), new GregorianCalendar(2016, 6, 11, 2, 50)));
-		reserve.add(new ReserveListItem("KEY", 0, new GregorianCalendar(2016, 6, 11, 16, 3), new GregorianCalendar(2016, 6, 11, 16, 5)));
-		reserve.add(new ReserveListItem("KEY", 0, new GregorianCalendar(2016, 6, 11, 16, 30), new GregorianCalendar(2016, 6, 11, 16, 55)));
-		reserve.add(new ReserveListItem("KEY", 0, new GregorianCalendar(2016, 6, 11, 17, 10), new GregorianCalendar(2016, 6, 11, 17, 30)));
-		schedule = new SchedulePanel(reserve, tableModel);
-		connectionHandler = new ConnectionHandler(serverPort, deviceDispatcher, calendarManager);
+		//schedule = new SchedulePanel(reserve, tableModel);
+		//connectionHandler = new ConnectionHandler(serverPort, deviceDispatcher, calendarManager);
+		connectionHandler = new ConnectionHandler(serverPort, simularDispatcher, calendarManager);
 		connectionHandler.start();
 		addWindowListener(new WindowListener() {
 			@Override
@@ -103,9 +110,11 @@ class MainFrame extends JFrame{
 						if(expiredSessionKeys != null){
 							deviceDispatcher.stopExpiredSessions(expiredSessionKeys);
 						}
-						tableModel.fireTableDataChanged();
-						table.repaint();
-						schedule.updateUI();
+						simulatorsModel.fireTableDataChanged();
+						simulatorTable.repaint();
+						//tableModel.fireTableDataChanged();
+						//table.repaint();
+						//schedule.updateUI();
 					}
 				} catch (InterruptedException e) {
 				}
@@ -115,10 +124,12 @@ class MainFrame extends JFrame{
 	}
 	
 	private void createGui(){
-		table = new DevicesTable(tableModel, this);
-		JScrollPane pane = new JScrollPane(table);
+		simulatorTable = new JTable(simulatorsModel);
+		JScrollPane pane = new JScrollPane(simulatorTable);
+		//table = new DevicesTable(tableModel, this);
+		//JScrollPane pane = new JScrollPane(table);
 		getContentPane().add(pane,BorderLayout.WEST);
-		JButton button = new JButton(new ImageIcon("add.png"));
+		JButton button = new JButton(new ImageIcon("icons/add.png"));
 		button.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -131,20 +142,21 @@ class MainFrame extends JFrame{
 		button.setPreferredSize(new Dimension(30, 30));
 		button.setMaximumSize(button.getPreferredSize());
 		box.add(Box.createHorizontalStrut(400));
-		box.add(button);
+		//box.add(button);
 		box.setBorder(new EmptyBorder(3, 3, 3, 3));
 		getContentPane().add(box,BorderLayout.NORTH);
 		
-		JScrollPane scroll = new JScrollPane(schedule);
-		scroll.setPreferredSize(new Dimension(500, 300));
-		scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-		getContentPane().add(scroll, BorderLayout.CENTER);
+		//JScrollPane scroll = new JScrollPane(schedule);
+		//scroll.setPreferredSize(new Dimension(500, 300));
+		//scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		//getContentPane().add(scroll, BorderLayout.CENTER);
 		pack();
 	}
 	
 	public boolean addNewDevice(int number, String target, String path){
 		if(deviceDispatcher.addNewDevice(number, target, path)){
-			table.revalidate();
+			simulatorTable.revalidate();
+			//table.revalidate();
 			return true;
 		}
 		return false;
@@ -153,7 +165,8 @@ class MainFrame extends JFrame{
 	
 	public boolean removeDevice(int number){
 		if(deviceDispatcher.removeDevice(number)){
-			table.revalidate();
+			simulatorTable.revalidate();
+			//table.revalidate();
 			return true;
 		}
 		return false;

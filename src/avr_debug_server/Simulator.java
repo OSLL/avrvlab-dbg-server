@@ -9,11 +9,15 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.net.Socket;
 
+import javax.swing.plaf.metal.MetalIconFactory.FolderIcon16;
+
+import avrdebug.communication.Message;
 import avrdebug.communication.Messenger;
 import avrdebug.communication.SimulAVRConfigs;
 
 public class Simulator implements SimulAVRListener {
 	private static int initialPort = 4442;
+	private static File tempFolder = new File("simulator-temp-files"); 
 	private int number; 	//index number of programmer-debugger
 	private int port; 		//AVaRICE port which GDB connect  
 	private String currentClientKey; //key of client working with MCU now
@@ -24,18 +28,55 @@ public class Simulator implements SimulAVRListener {
 	private String cpuTraceFilename;
 	private SimulAVR simulAvr;
 	private SimulAVRConfigs simulavrConfig;
+	private String status;
+	private boolean isStatusSended;
 	
 	public Simulator(int number){
 		this.number = number;
+		status = "READY";
 		// TODO Определить алгоритм присвоения порта
 		port = initialPort+this.number;
 		// TODO Определить алгоритм именования файлов
-		sketchFilename = port + "-simulavr-sketch.elf";
-		vcdTraceFilename = port + "-simulavr-vcd-output";
-		cpuTraceFilename = port + "-simulavr-cpu-output";
+		if(!tempFolder.exists())
+			tempFolder.mkdir();
+		sketchFilename = tempFolder.getAbsolutePath() + "/" + port + "-simulavr-sketch.elf";
+		vcdTraceFilename = tempFolder.getAbsolutePath() + "/" + port + "-simulavr-vcd-output";
+		cpuTraceFilename = tempFolder.getAbsolutePath() + "/" + port + "-simulavr-cpu-output";
+
+		
+	}
+			
+	public int getNumber() {
+		return number;
 	}
 	
+	public String getStatus(){
+		return status;
+	}
+
 	public void handleNewRequest(String clientKey, Socket socket){
+		Message message = Messenger.readMessage(socket);
+		if(message == null)
+			return;
+		String action = message.getText();
+		
+		System.out.println("Check for action: " + action);
+		if(action.equals("STOP")){
+			System.out.println("action: STOP");
+			stopService();
+			return;
+		}
+		if(!action.equals("START")){
+			try {
+				socket.close();
+			} catch (IOException e) {
+			}
+			return;
+		}
+		
+		System.out.println("action: START");
+		
+		stopService();
 		currentClientKey = clientKey;
 		currentClientSocket = socket;
 		/*remove files
@@ -59,8 +100,12 @@ public class Simulator implements SimulAVRListener {
 			System.out.println("Simulator: download sketch failed");
 			return;
 		}
+		System.out.println("Prepare to start simulator");
 		simulAvr = new SimulAVR(simulavrConfig, port, sketchFilename, vcdTraceFilename, cpuTraceFilename, this);
 		simulAvr.start();
+		isStatusSended = false;
+		System.out.println("Simulator started, IN USE");
+		status = "IN USE";
 	}
 
 	private void loadFile() throws IOException{
@@ -79,6 +124,7 @@ public class Simulator implements SimulAVRListener {
 		OutputStream str = s.getOutputStream();
 		DataOutputStream  dos = new DataOutputStream(str);
 		dos.writeLong(file.length());
+		System.out.println("File to send: " + file.getName() + ":" + file.length());
 		RandomAccessFile rfile = new RandomAccessFile(file.getAbsolutePath(), "r");
 		byte buff[] = new byte[128];
 		int size;
@@ -88,32 +134,103 @@ public class Simulator implements SimulAVRListener {
 		rfile.close();
 	}
 	
+	public void stopService(){
+		synchronized (this) {
+			if(simulAvr != null)
+				simulAvr.interrupt();
+			simulAvr = null;
+			currentClientKey = null;
+				status = "READY";				
+		}
+	}
+	
+	public void killService(){
+		synchronized (this) {
+			if(simulAvr != null){
+				simulAvr.setNeedToKill(true);
+				simulAvr.interrupt();
+			}
+			simulAvr = null;
+			currentClientKey = null;
+				status = "READY";				
+		}
+	}	
+	
 	@Override
 	public void started() {
+		if(!isStatusSended){
+			isStatusSended = true;
+			int parameter;
+			if(simulavrConfig.isDebugEnable())
+				parameter = port;
+			else
+				parameter = 0;
+			Messenger.writeMessage(currentClientSocket, new Message("OK", parameter));
+		}
 		System.out.println("SimulAVR started");
 	}
 
 	@Override
 	public void finishedSuccess() {
 		System.out.println("SimulAVR finished success");
-		if (currentClientSocket == null)
+		if (currentClientSocket == null){
+			System.out.println("currentClientSocket == null");
 			return;
+		}
+			
 		try {
 			if (simulavrConfig.isVCDTraceEnable()) {
 				File file = new File(vcdTraceFilename);
-				if(file.exists())
+				if(file.exists()){
+					System.out.println("Sending file back");
 					sendFile(currentClientSocket, file);
+				}
 			}
 			currentClientSocket.close();
 		} catch (IOException e) {
 		}
 		//check for result files
 		//if exists - send to client
+		status = "READY";
 	}
 
 	@Override
 	public void finishedBad() {
+		if(!isStatusSended){
+			Messenger.writeMessage(currentClientSocket, new Message("ERR", -1));
+			isStatusSended = true;
+		}		
 		System.out.println("SimulAVR finished bad");
+		status = "READY";
 		
 	}
+
+	@Override
+	public void interrupted() {
+		System.out.println("simulator interrupted");
+		if (currentClientSocket == null){
+			System.out.println("currentClientSocket == null");
+			return;
+		}
+			
+		try {
+			if (simulavrConfig.isVCDTraceEnable()) {
+				File file = new File(vcdTraceFilename);
+				if(file.exists()){
+					System.out.println("Sending file back");
+					sendFile(currentClientSocket, file);
+				}
+			}
+			currentClientSocket.close();
+		} catch (IOException e) {
+			System.out.println("error while sending result");
+		}		
+		status = "READY";
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		return number == ((Simulator)obj).number;
+	}
+
 }

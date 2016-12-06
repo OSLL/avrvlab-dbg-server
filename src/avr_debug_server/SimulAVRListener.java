@@ -8,4 +8,6 @@ public interface SimulAVRListener {
 	
 	public void finishedBad();
 	
+	public void interrupted();
+	
 }

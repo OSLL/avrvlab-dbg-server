@@ -4,12 +4,13 @@ import avrdebug.communication.SimulAVRConfigs;
 import avrdebug.communication.SimulAVRInitData;
 
 import java.io.*;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 public class SimulAVR extends Thread{
-    private static String simulAvrPath = "/home/constantin/simulavr";
+    private static String simulAvrPath = "./simulavr";
     private static String dumpFile = "simulavr.dump";
 
     private static boolean isDumped = false;
@@ -25,6 +26,11 @@ public class SimulAVR extends Thread{
 	private String cpuTraceFilename;
 	private Process simulAvrProcess;
 	private SimulAVRListener listener;
+	private boolean needToKill;
+
+	public void setNeedToKill(boolean needToKill) {
+		this.needToKill = needToKill;
+	}
 
 	public SimulAVR(SimulAVRConfigs simulavrConfig, int port, String sketchFilename, String vcdTraceFilename, String cpuTraceFilename, SimulAVRListener listener){
 		this.simulavrConfig = simulavrConfig;
@@ -35,6 +41,7 @@ public class SimulAVR extends Thread{
 		this.vcdInputTraceFilename = this.vcdTraceFilename+"-input";
 		this.listener = listener;
 		this.setDaemon(true);
+		needToKill = false;
 	}
 	
 	public void run(){
@@ -47,6 +54,7 @@ public class SimulAVR extends Thread{
 			InputStreamReader isr = new InputStreamReader(stream);
 			char buf[] = new char[15];
 			int count;
+			boolean isNotified = false;
 			while(true){
 				if(Thread.interrupted()){
 					System.out.println("Interrupted!");
@@ -64,22 +72,47 @@ public class SimulAVR extends Thread{
 					break;
 				}catch(IllegalThreadStateException e){
 					sleep(100);
+					if(!isNotified){
+						listener.started();
+						isNotified = true;
+					}
 					continue;
 				}
 				
 			}
-			System.out.println("Finished (1) ");
+			System.out.println("Simulavr finished");
 			listener.finishedSuccess();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			finishing();
 			e.printStackTrace();
 			listener.finishedBad();
 		} catch (InterruptedException e) {
-			System.out.println("Finished (2) ");
-			listener.finishedSuccess();
+			finishing();
+			try {
+				sleep(100);
+			} catch (InterruptedException e1) {
+			}
+			System.out.println("Simulavr interrupted");
+			listener.interrupted();
 		}
 	}
-	
+
+	private static long getPidOfProcess(Process p) {
+		long pid = -1;
+
+		try {
+			if (p.getClass().getName().equals("java.lang.UNIXProcess")) {
+				Field f = p.getClass().getDeclaredField("pid");
+				f.setAccessible(true);
+				pid = f.getLong(p);
+				f.setAccessible(false);
+			}
+		} catch (Exception e) {
+			pid = -1;
+		}
+		return pid;
+	}
+
 	private ArrayList<String> collectOptions(){
 		ArrayList<String> params = new ArrayList<String>();
 		params.add(simulAvrPath);
@@ -125,7 +158,36 @@ public class SimulAVR extends Thread{
 			}
 		}
 		bw.close();
-	}	
+	}
+	
+	private void finishing(){
+		if(simulAvrProcess==null)
+			return;
+		try {
+			if(needToKill){
+				System.out.println("Kill process");
+				simulAvrProcess.destroy();
+				return;
+			}
+			System.out.println("Send ctrl+c");
+			Runtime.getRuntime().exec("kill -SIGINT "+getPidOfProcess(simulAvrProcess));
+			System.out.println("Ctrl+c sended");
+		} catch (IOException e) {
+			simulAvrProcess.destroy();
+		}
+//		if(simulAvrProcess!=null){
+//			simulAvrProcess.destroy();
+//		}
+			
+	}
+	
+	@Override
+	protected void finalize() throws Throwable {
+		if(simulAvrProcess!=null){
+			simulAvrProcess.destroy();
+		}
+		super.finalize();
+	}
 	
     /**
      * @return
