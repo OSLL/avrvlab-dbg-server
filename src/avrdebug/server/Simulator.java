@@ -9,20 +9,23 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.net.Socket;
 
-import javax.swing.plaf.metal.MetalIconFactory.FolderIcon16;
+import com.google.api.client.util.Sleeper;
 
 import avrdebug.communication.Message;
 import avrdebug.communication.Messenger;
 import avrdebug.communication.SimulAVRConfigs;
+import avrdebug.configs.AppConfigs;
+import avrdebug.reservation.ReservationInfo;
 
 public class Simulator implements SimulAVRListener {
-	private static int initialPort = 4442;
+	public static final String READY = "Ready";
+	public static final String INUSE = "In use";
+	private static int initialPort = Integer.parseInt(AppConfigs.getProperty("debug.initial_port"));
 	private static File tempFolder = new File("simulator-temp-files"); 
-	private int number; 	//index number of programmer-debugger
+	private int id; 	//index number of programmer-debugger
 	private int port; 		//AVaRICE port which GDB connect  
-	private String currentClientKey; //key of client working with MCU now
+	private ReservationInfo currentReserveInfo;
 	private Socket currentClientSocket;
-	//private SimulAVR simulavr;
 	private String sketchFilename;
 	private String vcdTraceFilename;
 	private String cpuTraceFilename;
@@ -32,10 +35,10 @@ public class Simulator implements SimulAVRListener {
 	private boolean isStatusSended;
 	
 	public Simulator(int number){
-		this.number = number;
-		status = "READY";
+		this.id = number;
+		status = READY;
 		// TODO Определить алгоритм присвоения порта
-		port = initialPort+this.number;
+		port = initialPort+this.id;
 		// TODO Определить алгоритм именования файлов
 		if(!tempFolder.exists())
 			tempFolder.mkdir();
@@ -46,15 +49,19 @@ public class Simulator implements SimulAVRListener {
 		
 	}
 			
-	public int getNumber() {
-		return number;
+	public int getId() {
+		return id;
 	}
 	
 	public String getStatus(){
 		return status;
 	}
+	
+	public ReservationInfo getCurrentReserveInfo() {
+		return currentReserveInfo;
+	}
 
-	public void handleNewRequest(String clientKey, Socket socket){
+	public void handleNewRequest(Socket socket, ReservationInfo reserveInfo){
 		Message message = Messenger.readMessage(socket);
 		if(message == null)
 			return;
@@ -77,7 +84,13 @@ public class Simulator implements SimulAVRListener {
 		System.out.println("action: START");
 		
 		stopService();
-		currentClientKey = clientKey;
+		while(status!=READY){
+			
+		}
+		
+		Messenger.writeMessage(socket, new Message("READY",0));
+		
+		currentReserveInfo = reserveInfo;
 		currentClientSocket = socket;
 		/*remove files
 		 *  is exists*/
@@ -94,18 +107,20 @@ public class Simulator implements SimulAVRListener {
 		try {
 			simulavrConfig = Messenger.readSimulAVRConfigs(currentClientSocket);
 			if(simulavrConfig == null)
-				throw new IOException();
+				throw new IOException("Configs error");
 			loadFile();
 		} catch (IOException e) {
-			System.out.println("Simulator: download sketch failed");
+			e.printStackTrace();
+			//System.out.println("Simulator: download sketch failed: " + e.getMessage());
 			return;
 		}
 		System.out.println("Prepare to start simulator");
 		simulAvr = new SimulAVR(simulavrConfig, port, sketchFilename, vcdTraceFilename, cpuTraceFilename, this);
-		simulAvr.start();
 		isStatusSended = false;
 		System.out.println("Simulator started, IN USE");
-		status = "IN USE";
+		status = INUSE;
+		simulAvr.start();
+
 	}
 
 	private void loadFile() throws IOException{
@@ -138,23 +153,26 @@ public class Simulator implements SimulAVRListener {
 		synchronized (this) {
 			if(simulAvr != null)
 				simulAvr.interrupt();
+			if(simulAvr == null){
+				status = READY;	
+			}
 			simulAvr = null;
-			currentClientKey = null;
-				status = "READY";				
+			currentReserveInfo = null;
+						
 		}
 	}
 	
-	public void killService(){
+	/*public void killService(){
 		synchronized (this) {
 			if(simulAvr != null){
 				simulAvr.setNeedToKill(true);
 				simulAvr.interrupt();
 			}
 			simulAvr = null;
-			currentClientKey = null;
-				status = "READY";				
+			currentReserveInfo = null;
+			status = READY;				
 		}
-	}	
+	}*/	
 	
 	@Override
 	public void started() {
@@ -191,7 +209,7 @@ public class Simulator implements SimulAVRListener {
 		}
 		//check for result files
 		//if exists - send to client
-		status = "READY";
+		status = READY;
 	}
 
 	@Override
@@ -201,7 +219,7 @@ public class Simulator implements SimulAVRListener {
 			isStatusSended = true;
 		}		
 		System.out.println("SimulAVR finished bad");
-		status = "READY";
+		status = READY;
 		
 	}
 
@@ -225,12 +243,12 @@ public class Simulator implements SimulAVRListener {
 		} catch (IOException e) {
 			System.out.println("error while sending result");
 		}		
-		status = "READY";
+		status = READY;
 	}
 	
 	@Override
 	public boolean equals(Object obj) {
-		return number == ((Simulator)obj).number;
+		return id == ((Simulator)obj).id;
 	}
 
 }

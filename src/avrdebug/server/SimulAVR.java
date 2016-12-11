@@ -23,6 +23,7 @@ public class SimulAVR extends Thread{
 	private String sketchFilename;
 	private String vcdTraceFilename;
 	private String vcdInputTraceFilename;
+	@SuppressWarnings("unused")
 	private String cpuTraceFilename;
 	private Process simulAvrProcess;
 	private SimulAVRListener listener;

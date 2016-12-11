@@ -7,27 +7,35 @@ import java.net.Socket;
 import avrdebug.communication.Message;
 import avrdebug.communication.Messenger;
 import avrdebug.communication.SimulAVRInitData;
+import avrdebug.configs.AppConfigs;
+import avrdebug.reservation.ReservationErrorResponse;
+import avrdebug.reservation.ReservationInfo;
+import avrdebug.reservation.ReservationResponse;
+import avrdebug.reservation.ReservationSuccessResponse;
+import avrdebug.reservation.ReservationSystemConnector;
 
 class ConnectionHandler extends Thread{
-	
+	private static final String simulatorDeviceNick = "Virtual";
+	private static final String mcuDeviceNick = "Real";
 	private Socket socket;
 	private int port;
-	//private DeviceDispatcher deviceDispatcher;
+	private DeviceDispatcher deviceDispatcher;
 	private SimulatorDispatcher simulatorDispatcher;
 	private ServerSocket server;
-	//private ReserveCalendarManager calendarManager;
+	private ReservationSystemConnector reservationSystem;
 	
-	public ConnectionHandler(int port, SimulatorDispatcher simulatorDispatcher, ReserveCalendarManager calendarManager) {
+	public ConnectionHandler(int port, DeviceDispatcher deviceDispatcher, SimulatorDispatcher simulatorDispatcher) {
 		this.port = port;
+		this.deviceDispatcher = deviceDispatcher;
 		this.simulatorDispatcher = simulatorDispatcher;
-		//this.calendarManager = calendarManager;
+		reservationSystem = new ReservationSystemConnector(AppConfigs.getProperty("reservation.api.address"));
 	}
 	
 	public void run() {
 		try {
 			server = new ServerSocket(port);
 		} catch (IOException e) {
-			System.err.println("Error starting server socket");
+			System.err.println("Error starting server socket: " + e.getMessage());
 			System.exit(1);
 		}
 		while(true){
@@ -44,21 +52,59 @@ class ConnectionHandler extends Thread{
 							Message message = Messenger.readMessage(socket);
 							if(message == null)
 								throw new IOException();
-							switch(message.getText()){
-							/*case "LOAD":
-								deviceDispatcher.handleNewRequest(socket);
+							String command = message.getText();
+							switch(command){
+							case "DEBUG_MCU":
+							case "DEBUG_SIMUL":
+								//client wants debug
+								ReservationInfo reserveInfo = null;
+								//get client's token
+								message = Messenger.readMessage(socket);
+								if(message==null)
+									break;
+								//check token
+								ReservationResponse reserveResp = reservationSystem.getReserveInfo(message.getText());
+								if(reserveResp instanceof ReservationErrorResponse){
+									Messenger.writeMessage(socket, new Message("Wrong token",-1));
+									socket.close();
+									break;
+								}
+								//if token correct
+								if(reserveResp instanceof ReservationSuccessResponse){
+									reserveInfo = ((ReservationSuccessResponse)reserveResp).getReservationInfo();
+									//what target client wants
+									switch (command) {
+									case "DEBUG_MCU":
+										if(mcuDeviceNick.equals(reserveInfo.getResourceType())){ //if user's target same reserved target
+											deviceDispatcher.handleNewRequest(socket, reserveInfo);
+										}
+										else{
+											Messenger.writeMessage(socket, new Message("Wrong target. Check selected target. Token target: " + reserveInfo.getResourceType(),-2));
+										}
+										break;
+									case "DEBUG_SIMUL":
+										if(simulatorDeviceNick.equals(reserveInfo.getResourceType())){//if user's target same reserved target
+											simulatorDispatcher.handleNewRequest(socket, reserveInfo);
+										}
+										else{
+											Messenger.writeMessage(socket, new Message("Wrong target. Check selected target. Token target: " + reserveInfo.getResourceType(),-3));
+										}										
+										break;
+									default:
+										socket.close();
+										break;
+									}
+								}
 								break;
-							case "ADD":
-								calendarManager.handleAddRequest(socket);
-								break;
-							case "GET":
-								Messenger.writeSimpleReserveItemSet(socket, calendarManager.getSimpleReserveInfo());
-								Messenger.writeSimpleDeviceInfoList(socket, deviceDispatcher.getSimpleDeviceInfo());
-								break;*/
-							case "SIMUL":
-								System.out.println("GET: SIMUL");
-								simulatorDispatcher.handleNewRequest(socket);
-								break;
+
+
+//							case "LOAD":
+//								deviceDispatcher.handleNewRequest(socket);
+//								break;
+//							case "SIMUL":
+//								System.out.println("GET: SIMUL");
+//								simulatorDispatcher.handleNewRequest(socket);
+//								break;
 							case "GET_INIT_SIMUL_CONFIG":
 								try {
 									Messenger.writeSimulAVRInitData(socket, SimulAVR.getInitData());
@@ -71,15 +117,18 @@ class ConnectionHandler extends Thread{
 							default:
 								System.out.println("Wrong Message");
 								socket.close();
+								break;
 							}
 						} catch (IOException e) {
 							System.err.println("Error communication with connected client");
 						}
+						
 					}
+
 				});
 				thread.start();
 			} catch (IOException e) {
-				System.err.println("Error closing socket");
+				System.err.println("Error closing socket: " + e.getMessage());
 				continue;
 			} 
 		}

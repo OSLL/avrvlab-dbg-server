@@ -1,6 +1,6 @@
 #!/bin/sh
 
-SERVER_APP_NAME=Server.jar
+SERVER_APP_NAME=avrdebug.server.jar
 SERVER_APP_PATH=/opt/avr-debug
 
 #Download required tools:
@@ -23,6 +23,7 @@ sudo cp -p ./simulavr/src/simulavr $SERVER_APP_PATH/simulavr
 sudo cp -p ./$SERVER_APP_NAME $SERVER_APP_PATH/$SERVER_APP_NAME
 sudo cp -p ./avarice_supported_devices.txt $SERVER_APP_PATH/avarice_supported_devices.txt
 sudo cp -p -R ./icons $SERVER_APP_PATH/
+sudo cp -p -R ./lib $SERVER_APP_PATH/
 
 #Creating Server run-sript
 echo "java -jar $SERVER_APP_NAME" > $SERVER_APP_PATH/run.sh

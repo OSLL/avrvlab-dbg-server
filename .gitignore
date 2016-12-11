@@ -3,4 +3,5 @@ classes/*
 bin/*
 simulavr
 simulator-temp-files/*
+build/*
 .libs/*

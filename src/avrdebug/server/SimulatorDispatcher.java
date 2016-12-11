@@ -1,27 +1,24 @@
 package avrdebug.server;
 
 import java.net.Socket;
+import java.util.Date;
+import java.util.HashSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import avrdebug.communication.Message;
 import avrdebug.communication.Messenger;
+import avrdebug.reservation.ReservationInfo;
 
 public class SimulatorDispatcher {
 	private CopyOnWriteArrayList<Simulator> simulators;
-	private SimulatorsTableModel model;
 	
 	public SimulatorDispatcher() {
 		simulators = new CopyOnWriteArrayList<>();
-		model = new SimulatorsTableModel(simulators);
 	}
 	
-	public SimulatorsTableModel getModel(){
-		return model;
-	}
-	
-	public boolean addNewDevice(int number){
+	public boolean addNewDevice(int id){
 		
-		Simulator candidate = new Simulator(number);
+		Simulator candidate = new Simulator(id);
 		for(Simulator cur : simulators)
 			if(cur.equals(candidate))
 				return false;
@@ -29,41 +26,39 @@ public class SimulatorDispatcher {
 		return true;
 	}
 	
-	public boolean removeDevice(int number){
+	public boolean removeDevice(int id){
 		for(Simulator cur : simulators)
-			if(cur.getNumber() == number){
+			if(cur.getId() == id){
 				simulators.remove(cur);
 				return true;
 			}
 		return false;
 	}
 	
-	public void handleNewRequest(Socket socket){
-		Message message = Messenger.readMessage(socket);
-		if(message == null)
-			return;
-		String key = message.getText();
-		System.out.println("KEY: "+key);
-		Simulator currentSimul = null;
-		switch (key) {
-		case "SIMUL0":
-			currentSimul = simulators.get(0);
-			break;
-		case "SIMUL1":
-			currentSimul = simulators.get(1);
-			break;
-		case "SIMUL2":
-			currentSimul = simulators.get(2);
-			break;			
+	public void handleNewRequest(Socket socket, ReservationInfo reserveInfo){
+		Simulator simul = null;
+		for(Simulator cur : simulators){
+			if(cur.getId() == reserveInfo.getResourceId()){
+				simul = cur;
+				break;
+			}
 		}
-		if(currentSimul == null){
-			Messenger.writeMessage(socket, new Message("BAD_KEY"));
-			System.out.println("BAD_KEY");
+		if(simul == null){
+			Messenger.writeMessage(socket, new Message("Simulator not exists", -4));
 			return;
 		}
-		System.out.println("OK, let's handle" + currentSimul.getNumber());
-		Messenger.writeMessage(socket, new Message("OK"));
-		currentSimul.handleNewRequest(key, socket);
+		Messenger.writeMessage(socket, new Message("OK", 0));
+		simul.handleNewRequest(socket, reserveInfo);
+	}
+	
+	public void stopExpiredSessions(HashSet<String> sessions){
+		for(Simulator cur : simulators){
+			if(cur.getStatus() == Simulator.INUSE){
+				if(cur.getCurrentReserveInfo().getEndTime().before(new Date())){
+					cur.stopService();
+				}
+			}
+		}
 	}
 	
 }

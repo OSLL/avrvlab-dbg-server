@@ -8,32 +8,33 @@ import java.net.Socket;
 
 import avrdebug.communication.Message;
 import avrdebug.communication.Messenger;
+import avrdebug.configs.AppConfigs;
+import avrdebug.reservation.ReservationInfo;
 
 public class TargetDevice implements AvariceListener{
-	private static int initialPort = 4242;
-	private int number; 	//index number of programmer-debugger
+	public static final String READY = "Ready";
+	public static final String INUSE = "In use";
+	private static int initialPort = Integer.parseInt(AppConfigs.getProperty("debug.initial_port"));
+	private int id; 	//index number of programmer-debugger
 	private String name; 	//controller model (eg "atmega128")
 	private String path; 	//path to device (eg "/dev/ttyUSB0")
 	private int port; 		//AVaRICE port which GDB connect  
 	private String status;	//status of microcontroller (READY, DEBUG, UNAVAILABLE)
-	private String currentClientKey; //key of client working with MCU now
+	private ReservationInfo currentReserveInfo;
 	private Socket currentClientSocket;
 	private Avarice avarice;
 	private String sketchFilename;
 	
 	public String getStatus() {
-		//! Need to check file (path) existing !
-		synchronized (this) {
 			return status;
-		}
 	}
 
-	public String getCurrentClientKey() {
-			return currentClientKey;
+	public ReservationInfo getCurrentReserveInfo() {
+		return currentReserveInfo;
 	}
 
-	public int getNumber() {
-		return number;
+	public int getId() {
+		return id;
 	}
 
 	public String getName() {
@@ -45,21 +46,21 @@ public class TargetDevice implements AvariceListener{
 	}
 
 	public TargetDevice(int number, String mcu, String path) {
-		this.number = number;
+		this.id = number;
 		name = mcu;
 		this.path = path;
-		status = "READY";
-		port = initialPort + this.number; 
+		status = READY;
+		port = initialPort + this.id; 
 		sketchFilename = number+"-mcu-sketch.hex";
-		currentClientKey = null;
+		currentReserveInfo = null;
 		currentClientSocket = null;
 	}
 	
-	public void handleNewRequest(String clientKey, Socket socket){
+	public void handleNewRequest(Socket socket, ReservationInfo reserveInfo){
 		stopService();
 		synchronized (this) {
-			status = "DEBUG";
-			currentClientKey = clientKey;
+			status = INUSE;
+			currentReserveInfo = reserveInfo;
 			currentClientSocket = socket;
 			try {
 				loadFile();
@@ -78,8 +79,8 @@ public class TargetDevice implements AvariceListener{
 			if(avarice != null)
 				avarice.interrupt();
 			avarice = null;
-			currentClientKey = null;
-				status = "READY";				
+			currentReserveInfo = null;
+			status = READY;				
 		}
 	}
 
@@ -112,10 +113,8 @@ public class TargetDevice implements AvariceListener{
 	@Override
 	public void avariceFinished() {
 		System.out.println("Avarice finished");
-		synchronized (this) {
-			status = "READY";
-		}
-		currentClientKey = null;
+		status = READY;
+		currentReserveInfo = null;
 		avarice = null;
 	}
 	
@@ -133,7 +132,7 @@ public class TargetDevice implements AvariceListener{
 	
 	@Override
 	public boolean equals(Object obj) {
-		return ((number == ((TargetDevice)obj).number)||
+		return ((id == ((TargetDevice)obj).id)||
 				(path.equals( ((TargetDevice)obj).path )));
 	}
 	
