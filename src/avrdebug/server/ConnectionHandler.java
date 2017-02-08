@@ -15,8 +15,8 @@ import avrdebug.reservation.ReservationSuccessResponse;
 import avrdebug.reservation.ReservationSystemConnector;
 
 class ConnectionHandler extends Thread{
-	private static final String simulatorDeviceNick = "Virtual";
-	private static final String mcuDeviceNick = "Real";
+	private static final String simulatorDeviceNick = "simulator";
+	private static final String mcuDeviceNick = "mcu";
 	private Socket socket;
 	private int port;
 	private DeviceDispatcher deviceDispatcher;
